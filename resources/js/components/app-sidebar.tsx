@@ -23,38 +23,38 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Events',
-        href: '#', // TODO: Update with real routes later
+        href: '/events/setup',
         icon: CalendarDays,
     },
     {
         title: 'Attendance',
-        href: '#',
+        href: '/attendance',
         icon: ClipboardCheck,
     },
     {
         title: 'Employee',
-        href: '#',
+        href: '/employee',
         icon: Users,
     },
     {
         title: 'Statistics',
-        href: '#',
+        href: '/statistics',
         icon: BarChart3,
     },
     {
         title: 'Settings',
-        href: '#',
+        href: '/settings/profile',
         icon: Settings,
     },
 ];
 
 export function AppSidebar() {
     return (
-        <Sidebar collapsible="icon" variant="inset">
+        <Sidebar collapsible="icon" variant="inset" className="bg-[#0f112e] text-slate-300 border-none">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
+                        <SidebarMenuButton size="lg" asChild className="hover:bg-[#1a1c3d] text-white">
                             <Link href={dashboard()} prefetch>
                                 <AppLogo />
                             </Link>

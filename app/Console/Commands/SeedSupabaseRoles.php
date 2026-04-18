@@ -63,23 +63,33 @@ class SeedSupabaseRoles extends Command
             return 0;
         }
 
-        // Set admins from option if provided
         $adminList = $this->option('admins');
         if ($adminList) {
             $ids = array_filter(array_map('trim', explode(',', $adminList)));
             foreach ($ids as $id) {
+                // Get the real email from auth.users
+                $email = DB::table('auth.users')->where('id', $id)->value('email');
+
+                if (!$email) {
+                    $this->error("User ID $id not found in auth.users. skipping.");
+                    continue;
+                }
+
                 DB::table('profiles')->updateOrInsert(
                     ['user_id' => $id],
                     [
                         'role' => 'ccfp_admin',
-                        'user_name' => 'Admin User',
-                        'user_email' => 'admin@example.com',
+                        'user_name' => $email,
+                        'user_email' => $email,
                         'updated_at' => now(),
                         'created_at' => now()
                     ]
                 );
-                $this->info("Set $id as ccfp_admin");
+                $this->info("Set $id ($email) as ccfp_admin");
             }
+            
+            $this->info('Admin promotion complete.');
+            return 0;
         }
 
         // Default flow: seed profiles for all auth.users with default role

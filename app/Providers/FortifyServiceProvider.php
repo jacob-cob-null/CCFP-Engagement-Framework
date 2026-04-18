@@ -4,8 +4,11 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -40,6 +43,47 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
+
+        Fortify::authenticateUsing(function (Request $request) {
+            $supabaseUrl = config('services.supabase.url');
+            $supabaseKey = config('services.supabase.anon_key');
+
+            try {
+                Log::info('Attempting Supabase Auth Bridge for: ' . $request->email);
+
+                $response = Http::timeout(10)->withOptions(['verify' => false])->withHeaders([
+                    'apikey' => $supabaseKey,
+                    'Content-Type' => 'application/json',
+                ])->post($supabaseUrl . '/auth/v1/token?grant_type=password', [
+                    'email' => $request->email,
+                    'password' => $request->password,
+                ]);
+
+                if ($response->successful()) {
+                    $authData = $response->json();
+                    $userId = $authData['user']['id'];
+
+                    $user = User::where('user_id', $userId)->first();
+
+                    if ($user) {
+                        Log::info('Login successful, profile found.', ['user_id' => $userId]);
+                        session(['supabase_token' => $authData['access_token']]);
+                        return $user;
+                    }
+
+                    Log::warning('Login OK in Supabase but profile missing in Laravel', ['user_id' => $userId]);
+                } else {
+                    Log::error('Supabase auth rejected credentials or failed', [
+                        'status' => $response->status(),
+                        'error' => $response->json()['error_description'] ?? $response->body()
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::error('Supabase Auth Bridge Exception (possible timeout/network issue)', ['message' => $e->getMessage()]);
+            }
+
+            return null;
+        });
     }
 
     /**

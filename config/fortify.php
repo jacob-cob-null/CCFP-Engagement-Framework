@@ -144,14 +144,13 @@ return [
     */
 
     'features' => [
-        Features::registration(),
-        Features::resetPasswords(),
-        Features::emailVerification(),
-        Features::twoFactorAuthentication([
-            'confirm' => true,
-            'confirmPassword' => true,
-            // 'window' => 0
-        ]),
+        // Features::registration(),        // Admin-only user creation via API
+        // Features::resetPasswords(),      // Stretch feature
+        // Features::emailVerification(),   // Stretch feature
+        // Features::twoFactorAuthentication([  // Not required
+        //     'confirm' => true,
+        //     'confirmPassword' => true,
+        // ]),
     ],
 
 ];

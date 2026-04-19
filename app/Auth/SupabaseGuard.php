@@ -8,6 +8,7 @@ use Firebase\JWT\Key;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class SupabaseGuard implements Guard
 {
@@ -53,7 +54,10 @@ class SupabaseGuard implements Guard
                 return null;
             }
 
-            $user = User::where('user_id', $userId)->first();
+            // Cache the user model to avoid expensive remote DB trips on every request
+            $user = Cache::remember("auth_user_{$userId}", now()->addHour(), function () use ($userId) {
+                return User::where('user_id', $userId)->first();
+            });
 
             if ($user) {
                 // Attach the JWT claims to the user object for middleware use

@@ -1,5 +1,5 @@
-import { Link } from '@inertiajs/react';
-import { LayoutGrid, CalendarDays, ClipboardCheck, Users, BarChart3, Settings } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { LayoutGrid, CalendarDays, ClipboardCheck, Users, BarChart3, Settings, ShieldCheck } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -48,7 +48,18 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
+const adminNavItems: NavItem[] = [
+    {
+        title: 'User Management',
+        href: '/users',
+        icon: ShieldCheck,
+    },
+];
+
 export function AppSidebar() {
+    const { props } = usePage<{ auth: { user: { role: string } | null } }>();
+    const isAdmin = props.auth?.user?.role === 'ccfp_admin';
+
     return (
         <Sidebar collapsible="icon" variant="inset" className="bg-[#0f112e] text-slate-300 border-none">
             <SidebarHeader>
@@ -65,6 +76,11 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
+                {isAdmin && (
+                    <div className="mt-2 border-t border-white/10 pt-2">
+                        <NavMain items={adminNavItems} />
+                    </div>
+                )}
             </SidebarContent>
 
             <SidebarFooter>

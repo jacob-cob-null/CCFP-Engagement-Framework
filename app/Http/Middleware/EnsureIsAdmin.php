@@ -19,9 +19,14 @@ class EnsureIsAdmin
         $user = Auth::user();
 
         if (!$user || $user->role !== 'ccfp_admin') {
-            return response()->json([
-                'message' => 'Forbidden. This action requires administrative privileges.'
-            ], 403);
+            // Return JSON for API/AJAX, redirect for standard web requests
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Forbidden. This action requires administrative privileges.'
+                ], 403);
+            }
+
+            return redirect()->route('dashboard')->with('error', 'Access denied. CCFP Admin role required.');
         }
 
         return $next($request);

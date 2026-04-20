@@ -1,0 +1,204 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Attendance;
+use App\Models\Employee;
+use App\Models\Event;
+use App\Models\EmployeePointTotal;
+use App\Models\EventPointOverride;
+use App\Models\PointPolicy;
+use App\Services\AuditService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
+
+class AttendanceController extends Controller
+{
+    public function index(Request $request)
+    {
+        // Attendance page shows a list of events to select from, then their records
+        $query = Event::with('unit')->active();
+
+        $user = Auth::user();
+        if ($user->role !== 'ccfp_admin') {
+            $query->where('unit_id', $user->unit_id);
+        }
+
+        $events = $query->orderByDesc('event_date')->get(['event_id', 'title', 'event_date', 'scope', 'unit_id', 'term_id']);
+
+        // If an event is selected, load its attendance records
+        $attendanceRecords = collect();
+        $selectedEvent     = null;
+
+        if ($eventId = $request->get('event_id')) {
+            $selectedEvent = Event::with('unit', 'term')->where('event_id', $eventId)->active()->first();
+
+            if ($selectedEvent) {
+                $attendanceRecords = Attendance::with('employee')
+                    ->where('event_id', $eventId)
+                    ->active()
+                    ->orderBy('recorded_at', 'desc')
+                    ->get();
+            }
+        }
+
+        $policies = PointPolicy::all();
+
+        return Inertia::render('attendance', [
+            'events'            => $events,
+            'selectedEvent'     => $selectedEvent,
+            'attendanceRecords' => $attendanceRecords,
+            'pointPolicies'     => $policies,
+            'filters'           => $request->only(['event_id']),
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'event_id'           => 'required|exists:events,event_id',
+            'search_query'       => 'required|string', // name or employee number
+            'participation_role' => 'required|in:participant,organizer,donor',
+        ]);
+
+        $event = Event::where('event_id', $validated['event_id'])->active()->firstOrFail();
+
+        // Look up employee by name or number
+        $employee = Employee::where('employee_name', 'ilike', $validated['search_query'])
+            ->orWhere('employee_number', $validated['search_query'])
+            ->whereNull('deleted_at')
+            ->first();
+
+        if (!$employee) {
+            return back()->withErrors(['search_query' => 'No active employee found with that name or number.']);
+        }
+
+        // Check for duplicate attendance
+        $existing = Attendance::where('event_id', $event->event_id)
+            ->where('employee_id', $employee->employee_id)
+            ->active()
+            ->first();
+
+        if ($existing) {
+            return back()->withErrors(['search_query' => "{$employee->employee_name} is already recorded for this event."]);
+        }
+
+        // Determine points: check event overrides first, then global policy
+        $override = EventPointOverride::where('event_id', $event->event_id)
+            ->where('participation_role', $validated['participation_role'])
+            ->first();
+
+        $pointsAwarded = $override
+            ? $override->points_awarded
+            : (PointPolicy::where('participation_role', $validated['participation_role'])->value('default_points') ?? 1);
+
+        $attendance = Attendance::create([
+            'attendance_id'      => (string) Str::uuid(),
+            'employee_id'        => $employee->employee_id,
+            'event_id'           => $event->event_id,
+            'participation_role' => $validated['participation_role'],
+            'points_awarded'     => $pointsAwarded,
+            'recorded_by'        => Auth::user()->user_id,
+        ]);
+
+        // Update running point totals
+        $this->recalculatePointTotal($employee->employee_id, $event->term_id);
+
+        AuditService::log(
+            actionType:  'create_attendance',
+            targetId:    $attendance->attendance_id,
+            description: "Recorded attendance for {$employee->employee_name} at event '{$event->title}' ({$validated['participation_role']}, {$pointsAwarded} pts).",
+            metadata:    [
+                'employee_id'        => $employee->employee_id,
+                'event_id'           => $event->event_id,
+                'participation_role' => $validated['participation_role'],
+                'points_awarded'     => $pointsAwarded,
+            ],
+        );
+
+        return redirect()->route('attendance.index', ['event_id' => $event->event_id])
+            ->with('success', "{$employee->employee_name} recorded ({$pointsAwarded} pts).");
+    }
+
+    public function update(Request $request, string $id)
+    {
+        $record = Attendance::where('attendance_id', $id)->active()->firstOrFail();
+
+        $validated = $request->validate([
+            'points_awarded'     => 'required|integer|min:0',
+            'participation_role' => 'required|in:participant,organizer,donor',
+            'override_reason'    => 'required|string|max:500',
+        ]);
+
+        $before = $record->only(['points_awarded', 'participation_role']);
+        $record->update([
+            'points_awarded'     => $validated['points_awarded'],
+            'participation_role' => $validated['participation_role'],
+            'override_reason'    => $validated['override_reason'],
+            'is_manual_override' => true,
+        ]);
+
+        // Recalculate point totals
+        $event = Event::find($record->event_id);
+        if ($event) {
+            $this->recalculatePointTotal($record->employee_id, $event->term_id);
+        }
+
+        AuditService::log(
+            actionType:  'update_attendance',
+            targetId:    $id,
+            description: "Manual point override for attendance {$id}: {$before['points_awarded']} → {$validated['points_awarded']} pts. Reason: {$validated['override_reason']}",
+            metadata:    ['before' => $before, 'after' => $validated],
+        );
+
+        return redirect()->route('attendance.index', ['event_id' => $record->event_id])
+            ->with('success', 'Attendance record updated.');
+    }
+
+    public function destroy(string $id)
+    {
+        $record = Attendance::where('attendance_id', $id)->active()->firstOrFail();
+
+        $record->update([
+            'deleted_at'  => now(),
+            'is_archived' => true,
+        ]);
+
+        // Recalculate point totals after removal
+        $event = Event::find($record->event_id);
+        if ($event) {
+            $this->recalculatePointTotal($record->employee_id, $event->term_id);
+        }
+
+        AuditService::log(
+            actionType:  'delete_attendance',
+            targetId:    $id,
+            description: "Soft-deleted attendance record {$id}.",
+            metadata:    [
+                'employee_id' => $record->employee_id,
+                'event_id'    => $record->event_id,
+            ],
+        );
+
+        return redirect()->route('attendance.index', ['event_id' => $record->event_id])
+            ->with('success', 'Attendance record removed.');
+    }
+
+    // ── Helper ─────────────────────────────────────────────────────────────────
+
+    private function recalculatePointTotal(string $employeeId, string $termId): void
+    {
+        $total = Attendance::where('employee_id', $employeeId)
+            ->whereHas('event', fn($q) => $q->where('term_id', $termId)->active())
+            ->active()
+            ->sum('points_awarded');
+
+        EmployeePointTotal::updateOrInsert(
+            ['employee_id' => $employeeId, 'term_id' => $termId],
+            ['total_points' => $total, 'last_calculated_at' => now()]
+        );
+    }
+}

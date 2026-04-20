@@ -1,5 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, CalendarDays, ClipboardCheck, Users, BarChart3, Settings, ShieldCheck } from 'lucide-react';
+import {
+    LayoutGrid, CalendarDays, ClipboardCheck, Users, BarChart3,
+    Settings, ShieldCheck, Building2, BookOpen, Sliders,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -16,44 +19,19 @@ import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Events',
-        href: '/events/setup',
-        icon: CalendarDays,
-    },
-    {
-        title: 'Attendance',
-        href: '/attendance',
-        icon: ClipboardCheck,
-    },
-    {
-        title: 'Employee',
-        href: '/employee',
-        icon: Users,
-    },
-    {
-        title: 'Statistics',
-        href: '/statistics',
-        icon: BarChart3,
-    },
-    {
-        title: 'Settings',
-        href: '/settings/profile',
-        icon: Settings,
-    },
+    { title: 'Dashboard',   href: dashboard(),      icon: LayoutGrid     },
+    { title: 'Events',      href: '/events/setup',  icon: CalendarDays   },
+    { title: 'Attendance',  href: '/attendance',     icon: ClipboardCheck },
+    { title: 'Employee',    href: '/employee',       icon: Users          },
+    { title: 'Statistics',  href: '/statistics',     icon: BarChart3      },
+    { title: 'Settings',    href: '/settings/profile', icon: Settings     },
 ];
 
 const adminNavItems: NavItem[] = [
-    {
-        title: 'User Management',
-        href: '/users',
-        icon: ShieldCheck,
-    },
+    { title: 'User Management',       href: '/users',                 icon: ShieldCheck },
+    { title: 'Organizational Units',  href: '/organizational-units',  icon: Building2   },
+    { title: 'Academic Terms',        href: '/academic-terms',        icon: BookOpen    },
+    { title: 'Point Policies',        href: '/point-policies',        icon: Sliders     },
 ];
 
 export function AppSidebar() {

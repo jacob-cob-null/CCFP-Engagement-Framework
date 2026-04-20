@@ -4,15 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicTerm;
 use App\Services\AuditService;
+use App\Services\CacheKeys;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class AcademicTermController extends Controller
 {
     public function index(Request $request)
     {
-        $terms = AcademicTerm::orderByDesc('start_date')->get();
+        $terms = Cache::remember(CacheKeys::ACADEMIC_TERMS, CacheKeys::TTL_REFERENCE, fn() =>
+            AcademicTerm::orderByDesc('start_date')->get()->toArray()
+        );
 
         return Inertia::render('academic-terms', [
             'terms' => $terms,
@@ -30,12 +33,13 @@ class AcademicTermController extends Controller
             'is_current'    => 'boolean',
         ]);
 
-        // Only one term can be current at a time
         if (!empty($validated['is_current'])) {
             AcademicTerm::query()->update(['is_current' => false]);
         }
 
         $term = AcademicTerm::create($validated);
+
+        $this->invalidateCache();
 
         AuditService::log(
             actionType:  'create_academic_term',
@@ -67,6 +71,8 @@ class AcademicTermController extends Controller
         $before = $term->only(['academic_year', 'semester', 'start_date', 'end_date', 'is_current']);
         $term->update($validated);
 
+        $this->invalidateCache();
+
         AuditService::log(
             actionType:  'update_academic_term',
             targetId:    $id,
@@ -82,7 +88,6 @@ class AcademicTermController extends Controller
     {
         $term = AcademicTerm::where('term_id', $id)->firstOrFail();
 
-        // Prevent deletion if events reference this term
         $eventCount = $term->events()->count();
         if ($eventCount > 0) {
             return back()->withErrors([
@@ -91,6 +96,8 @@ class AcademicTermController extends Controller
         }
 
         $term->delete();
+
+        $this->invalidateCache();
 
         AuditService::log(
             actionType:  'delete_academic_term',
@@ -101,5 +108,12 @@ class AcademicTermController extends Controller
 
         return redirect()->route('academic-terms.index')
             ->with('success', 'Academic term deleted.');
+    }
+
+    // ── Cache Helper ───────────────────────────────────────────────────────────
+
+    private function invalidateCache(): void
+    {
+        Cache::forget(CacheKeys::ACADEMIC_TERMS);
     }
 }

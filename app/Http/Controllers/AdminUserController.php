@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\OrganizationalUnit;
 use App\Services\AuditService;
+use App\Services\CacheKeys;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -45,7 +47,10 @@ class AdminUserController extends Controller
         }
 
         $users = $query->orderBy('user_name')->paginate(25)->withQueryString();
-        $units = OrganizationalUnit::orderBy('unit_name')->get(['unit_id', 'unit_name', 'unit_type']);
+        // Units dropdown served from file cache — avoids a second Supabase round-trip on every /users load
+        $units = Cache::remember(CacheKeys::ORG_UNITS, CacheKeys::TTL_REFERENCE, fn() =>
+            OrganizationalUnit::orderBy('unit_name')->get(['unit_id', 'unit_name', 'unit_type'])->toArray()
+        );
 
         return Inertia::render('users', [
             'users'   => $users,

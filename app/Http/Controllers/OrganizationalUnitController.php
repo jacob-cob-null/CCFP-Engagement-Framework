@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\OrganizationalUnit;
 use App\Services\AuditService;
+use App\Services\CacheKeys;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -23,12 +24,16 @@ class OrganizationalUnitController extends Controller
             $query->where('unit_type', $type);
         }
 
-        $units = $query
-            ->whereNull('deleted_at')
-            ->where('is_archived', false)
-            ->orderBy('unit_name')
-            ->paginate(25)
-            ->withQueryString();
+        // Only apply cache when no filters are active (filtered views are dynamic)
+        $units = ($request->hasAny(['search', 'type']))
+            ? $query->whereNull('deleted_at')->whereRaw('"is_archived" = false')->orderBy('unit_name')->paginate(25)->withQueryString()
+            : Cache::remember(CacheKeys::ORG_UNITS . ':paginated', CacheKeys::TTL_REFERENCE, fn() =>
+                OrganizationalUnit::whereNull('deleted_at')
+                    ->whereRaw('"is_archived" = false')
+                    ->orderBy('unit_name')
+                    ->paginate(25)
+                    ->withQueryString()
+              );
 
         return Inertia::render('organizational-units', [
             'units'   => $units,
@@ -45,6 +50,8 @@ class OrganizationalUnitController extends Controller
         ]);
 
         $unit = OrganizationalUnit::create($validated);
+
+        $this->invalidateCache();
 
         AuditService::log(
             actionType:  'create_org_unit',
@@ -69,6 +76,8 @@ class OrganizationalUnitController extends Controller
         $before = $unit->only(['unit_name', 'unit_type']);
         $unit->update($validated);
 
+        $this->invalidateCache();
+
         AuditService::log(
             actionType:  'update_org_unit',
             targetId:    $id,
@@ -91,6 +100,8 @@ class OrganizationalUnitController extends Controller
             'is_archived' => true,
         ]);
 
+        $this->invalidateCache();
+
         AuditService::log(
             actionType:  'delete_org_unit',
             targetId:    $id,
@@ -100,5 +111,14 @@ class OrganizationalUnitController extends Controller
 
         return redirect()->route('organizational-units.index')
             ->with('success', 'Organizational unit archived.');
+    }
+
+    // ── Cache Helper ───────────────────────────────────────────────────────────
+
+    private function invalidateCache(): void
+    {
+        // Bust both the paginated page cache and the dropdown cache used by other controllers
+        Cache::forget(CacheKeys::ORG_UNITS . ':paginated');
+        Cache::forget(CacheKeys::ORG_UNITS);
     }
 }

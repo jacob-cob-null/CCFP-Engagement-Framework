@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\PointPolicy;
 use App\Services\AuditService;
+use App\Services\CacheKeys;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -12,7 +14,10 @@ class PointPolicyController extends Controller
 {
     public function index()
     {
-        $policies = PointPolicy::orderBy('participation_role')->get();
+        // Point policies change very rarely — cache for 24 hours
+        $policies = Cache::remember(CacheKeys::POINT_POLICIES, CacheKeys::TTL_STABLE, fn() =>
+            PointPolicy::orderBy('participation_role')->get()->toArray()
+        );
 
         return Inertia::render('point-policies', [
             'policies' => $policies,
@@ -28,6 +33,8 @@ class PointPolicyController extends Controller
 
         $validated['policy_id'] = (string) Str::uuid();
         $policy = PointPolicy::create($validated);
+
+        $this->invalidateCache();
 
         AuditService::log(
             actionType:  'create_point_policy',
@@ -51,6 +58,8 @@ class PointPolicyController extends Controller
         $before = ['default_points' => $policy->default_points];
         $policy->update($validated);
 
+        $this->invalidateCache();
+
         AuditService::log(
             actionType:  'update_point_policy',
             targetId:    $id,
@@ -69,6 +78,8 @@ class PointPolicyController extends Controller
 
         $policy->delete();
 
+        $this->invalidateCache();
+
         AuditService::log(
             actionType:  'delete_point_policy',
             targetId:    $id,
@@ -78,5 +89,12 @@ class PointPolicyController extends Controller
 
         return redirect()->route('point-policies.index')
             ->with('success', 'Point policy deleted.');
+    }
+
+    // ── Cache Helper ───────────────────────────────────────────────────────────
+
+    private function invalidateCache(): void
+    {
+        Cache::forget(CacheKeys::POINT_POLICIES);
     }
 }

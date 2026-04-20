@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Employee;
 use App\Models\OrganizationalUnit;
 use App\Services\AuditService;
+use App\Services\CacheKeys;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -16,7 +18,6 @@ class EmployeeController extends Controller
     {
         $query = Employee::with('unit');
 
-        // Search by name or employee number
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('employee_name', 'ilike', "%{$search}%")
@@ -32,7 +33,6 @@ class EmployeeController extends Controller
             $query->where('status', $status);
         }
 
-        // Scope: college_rep / org_rep only sees their unit
         $user = Auth::user();
         if ($user->role !== 'ccfp_admin') {
             $query->where('unit_id', $user->unit_id);
@@ -43,7 +43,11 @@ class EmployeeController extends Controller
         $query->whereNull('deleted_at');
 
         $employees = $query->orderBy('employee_name')->paginate(25)->withQueryString();
-        $units = OrganizationalUnit::active()->orderBy('unit_name')->get(['unit_id', 'unit_name', 'unit_type']);
+
+        // Units dropdown — served from cache, avoiding a second remote DB round-trip
+        $units = Cache::remember(CacheKeys::ORG_UNITS, CacheKeys::TTL_REFERENCE, fn() =>
+            OrganizationalUnit::active()->orderBy('unit_name')->get(['unit_id', 'unit_name', 'unit_type'])->toArray()
+        );
 
         return Inertia::render('employee', [
             'employees' => $employees,

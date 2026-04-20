@@ -62,6 +62,6 @@ class Event extends Model
 
     public function scopeActive($query)
     {
-        return $query->whereNull('deleted_at')->where('is_archived', false);
+        return $query->whereNull('deleted_at')->whereRaw('"is_archived" = false');
     }
 }

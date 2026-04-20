@@ -7,8 +7,10 @@ use App\Models\Event;
 use App\Models\EventPointOverride;
 use App\Models\OrganizationalUnit;
 use App\Services\AuditService;
+use App\Services\CacheKeys;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -30,7 +32,6 @@ class EventController extends Controller
             $query->where('term_id', $termId);
         }
 
-        // Scope enforcement: non-admins see only their unit's events
         $user = Auth::user();
         if ($user->role !== 'ccfp_admin') {
             $query->where('unit_id', $user->unit_id);
@@ -41,8 +42,15 @@ class EventController extends Controller
         $query->active();
 
         $events = $query->orderByDesc('event_date')->paginate(25)->withQueryString();
-        $terms = AcademicTerm::orderByDesc('start_date')->get(['term_id', 'academic_year', 'semester', 'is_current']);
-        $units = OrganizationalUnit::active()->orderBy('unit_name')->get(['unit_id', 'unit_name', 'unit_type']);
+
+        // Both dropdowns served from cache — save 2 remote DB round-trips per request
+        $terms = Cache::remember(CacheKeys::ACADEMIC_TERMS, CacheKeys::TTL_REFERENCE, fn() =>
+            AcademicTerm::orderByDesc('start_date')->get(['term_id', 'academic_year', 'semester', 'is_current'])->toArray()
+        );
+
+        $units = Cache::remember(CacheKeys::ORG_UNITS, CacheKeys::TTL_REFERENCE, fn() =>
+            OrganizationalUnit::active()->orderBy('unit_name')->get(['unit_id', 'unit_name', 'unit_type'])->toArray()
+        );
 
         return Inertia::render('events/setup', [
             'events'  => $events,
@@ -64,13 +72,11 @@ class EventController extends Controller
             'term_id'          => 'required|exists:academic_terms,term_id',
             'unit_id'          => 'required|exists:organizational_units,unit_id',
             'event_date'       => 'required|date',
-            // Optional per-event point overrides
             'point_overrides'  => 'nullable|array',
             'point_overrides.*.participation_role' => 'required|in:participant,organizer,donor',
             'point_overrides.*.points_awarded'     => 'required|integer|min:0',
         ]);
 
-        // Enforce scope restriction for non-admins
         if ($user->role !== 'ccfp_admin') {
             if ($validated['scope'] === 'university') {
                 return back()->withErrors(['scope' => 'You cannot create university-scoped events.']);
@@ -86,7 +92,6 @@ class EventController extends Controller
 
         $event = Event::create($validated);
 
-        // Save per-event point overrides if provided
         foreach ($overrides as $override) {
             EventPointOverride::create([
                 'override_id'        => (string) Str::uuid(),
@@ -137,7 +142,6 @@ class EventController extends Controller
         $before = $event->only(['title', 'scope', 'event_date', 'term_id', 'unit_id']);
         $event->update($validated);
 
-        // Replace overrides
         EventPointOverride::where('event_id', $id)->delete();
         foreach ($overrides as $override) {
             EventPointOverride::create([

@@ -5,8 +5,10 @@ use App\Http\Controllers\AcademicTermController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\LiveAttendanceController;
 use App\Http\Controllers\OrganizationalUnitController;
 use App\Http\Controllers\PointPolicyController;
+use App\Http\Controllers\SemesterArchiveController;
 use App\Http\Middleware\EnsureIsAdmin;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +41,10 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('attendance/{id}', [AttendanceController::class, 'update'])->name('attendance.update');
     Route::delete('attendance/{id}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
 
+    // ── Live / Mobile Attendance ─────────────────────────────────────────────
+    Route::get('attendance/live', [LiveAttendanceController::class, 'index'])->name('attendance.live');
+    Route::post('attendance/live', [LiveAttendanceController::class, 'store'])->name('attendance.live.store');
+
     // ── Admin-only routes ────────────────────────────────────────────────────
     Route::middleware([EnsureIsAdmin::class])->group(function () {
 
@@ -65,6 +71,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('users', [AdminUserController::class, 'store'])->name('users.store');
         Route::patch('users/{id}', [AdminUserController::class, 'update'])->name('users.update');
         Route::delete('users/{id}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+
+        // Semester Archiving
+        Route::get('semester-archive', [SemesterArchiveController::class, 'index'])->name('semester-archive.index');
+        Route::post('semester-archive/{termId}', [SemesterArchiveController::class, 'archive'])->name('semester-archive.archive');
     });
 });
 

@@ -5,11 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\Event;
-use App\Models\EmployeePointTotal;
-use App\Models\EventPointOverride;
 use App\Models\PointPolicy;
 use App\Services\AuditService;
 use App\Services\CacheKeys;
+use App\Services\PointCalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -86,20 +85,7 @@ class AttendanceController extends Controller
             return back()->withErrors(['search_query' => "{$employee->employee_name} is already recorded for this event."]);
         }
 
-        // Point lookup: event override → cached global policy → fallback 1
-        $override = EventPointOverride::where('event_id', $event->event_id)
-            ->where('participation_role', $validated['participation_role'])
-            ->first();
-
-        if ($override) {
-            $pointsAwarded = $override->points_awarded;
-        } else {
-            $policiesCache = Cache::remember(CacheKeys::POINT_POLICIES, CacheKeys::TTL_STABLE, fn() =>
-                PointPolicy::orderBy('participation_role')->get()->toArray()
-            );
-            $policies = collect($policiesCache)->keyBy('participation_role');
-            $pointsAwarded = $policies[$validated['participation_role']]['default_points'] ?? 1;
-        }
+        $pointsAwarded = PointCalculationService::calculatePoints($event, $validated['participation_role']);
 
         $attendance = Attendance::create([
             'attendance_id'      => (string) Str::uuid(),
@@ -110,7 +96,7 @@ class AttendanceController extends Controller
             'recorded_by'        => Auth::user()->user_id,
         ]);
 
-        $this->recalculatePointTotal($employee->employee_id, $event->term_id);
+        PointCalculationService::recalculateTotal($employee->employee_id, $event->term_id);
 
         AuditService::log(
             actionType:  'create_attendance',
@@ -148,7 +134,7 @@ class AttendanceController extends Controller
 
         $event = Event::find($record->event_id);
         if ($event) {
-            $this->recalculatePointTotal($record->employee_id, $event->term_id);
+            PointCalculationService::recalculateTotal($record->employee_id, $event->term_id);
         }
 
         AuditService::log(
@@ -173,7 +159,7 @@ class AttendanceController extends Controller
 
         $event = Event::find($record->event_id);
         if ($event) {
-            $this->recalculatePointTotal($record->employee_id, $event->term_id);
+            PointCalculationService::recalculateTotal($record->employee_id, $event->term_id);
         }
 
         AuditService::log(
@@ -190,18 +176,4 @@ class AttendanceController extends Controller
             ->with('success', 'Attendance record removed.');
     }
 
-    // ── Helper ─────────────────────────────────────────────────────────────────
-
-    private function recalculatePointTotal(string $employeeId, string $termId): void
-    {
-        $total = Attendance::where('employee_id', $employeeId)
-            ->whereHas('event', fn($q) => $q->where('term_id', $termId)->active())
-            ->active()
-            ->sum('points_awarded');
-
-        EmployeePointTotal::updateOrInsert(
-            ['employee_id' => $employeeId, 'term_id' => $termId],
-            ['total_points' => $total, 'last_calculated_at' => now()]
-        );
-    }
 }

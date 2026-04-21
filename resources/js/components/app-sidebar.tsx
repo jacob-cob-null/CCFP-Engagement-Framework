@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     LayoutGrid, CalendarDays, ClipboardCheck, Users, BarChart3,
     Settings, ShieldCheck, Building2, BookOpen, Sliders,
+    Smartphone, Archive,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -19,12 +20,13 @@ import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
-    { title: 'Dashboard',   href: dashboard(),      icon: LayoutGrid     },
-    { title: 'Events',      href: '/events/setup',  icon: CalendarDays   },
-    { title: 'Attendance',  href: '/attendance',     icon: ClipboardCheck },
-    { title: 'Employee',    href: '/employee',       icon: Users          },
-    { title: 'Statistics',  href: '/statistics',     icon: BarChart3      },
-    { title: 'Settings',    href: '/settings/profile', icon: Settings     },
+    { title: 'Dashboard',        href: dashboard(),         icon: LayoutGrid  },
+    { title: 'Events',           href: '/events/setup',     icon: CalendarDays },
+    { title: 'Attendance',       href: '/attendance',        icon: ClipboardCheck },
+    { title: 'Live Attendance',  href: '/attendance/live',   icon: Smartphone  },
+    { title: 'Employee',         href: '/employee',          icon: Users        },
+    { title: 'Statistics',       href: '/statistics',        icon: BarChart3    },
+    { title: 'Settings',         href: '/settings/profile',  icon: Settings     },
 ];
 
 const adminNavItems: NavItem[] = [
@@ -32,6 +34,7 @@ const adminNavItems: NavItem[] = [
     { title: 'Organizational Units',  href: '/organizational-units',  icon: Building2   },
     { title: 'Academic Terms',        href: '/academic-terms',        icon: BookOpen    },
     { title: 'Point Policies',        href: '/point-policies',        icon: Sliders     },
+    { title: 'Semester Archive',      href: '/semester-archive',      icon: Archive     },
 ];
 
 export function AppSidebar() {

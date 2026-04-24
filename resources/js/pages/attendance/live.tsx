@@ -1,7 +1,6 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { CalendarDays, CheckCircle, User } from 'lucide-react';
 import { useEffect, useRef } from 'react';
-import MinimalLayout from '@/layouts/minimal-layout';
 import type { AttendanceRecord, Event, ParticipationRole } from '@/types';
 
 type Props = {
@@ -47,8 +46,14 @@ export default function LiveAttendancePage({ events, selectedEvent, recentRecord
     }
 
     return (
-        <>
+        <div className="flex flex-col flex-1 p-8 bg-[#fafafa] min-h-screen">
             <Head title="Live Attendance" />
+
+            {/* Title Section */}
+            <div className="mb-6">
+                <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Live Attendance</h1>
+                <p className="mt-1 text-sm text-slate-500">Record attendance in real-time for active events.</p>
+            </div>
 
             {/* Event selector (shown when no event selected or as a change button) */}
             {!selectedEvent ? (
@@ -185,9 +190,10 @@ export default function LiveAttendancePage({ events, selectedEvent, recentRecord
                     )}
                 </div>
             )}
-        </>
+        </div>
     );
 }
 
-// Use the minimal no-sidebar layout
-LiveAttendancePage.layout = (page: React.ReactNode) => <MinimalLayout>{page}</MinimalLayout>;
+LiveAttendancePage.layout = {
+    breadcrumbs: [{ title: 'Live Attendance', href: '/attendance/live' }],
+};

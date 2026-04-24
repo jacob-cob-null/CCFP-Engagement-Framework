@@ -2,7 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     LayoutGrid, CalendarDays, ClipboardCheck, Users, BarChart3,
     Settings, ShieldCheck, Building2, BookOpen, Sliders,
-    Smartphone, Archive,
+    Smartphone, Archive, Search, Menu,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -15,6 +15,7 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
@@ -40,22 +41,37 @@ const adminNavItems: NavItem[] = [
 export function AppSidebar() {
     const { props } = usePage<{ auth: { user: { role: string } | null } }>();
     const isAdmin = props.auth?.user?.role === 'ccfp_admin';
+    const { isMobile, setOpenMobile } = useSidebar();
 
     return (
         <Sidebar collapsible="icon" variant="inset" className="bg-[#0f112e] text-slate-300 border-none">
-            <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild className="hover:bg-[#1a1c3d] text-white">
-                            <Link href={dashboard()} prefetch>
-                                <AppLogo />
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+            <SidebarHeader className={isMobile ? "pb-2 pt-2 px-2" : ""}>
+                {isMobile ? (
+                    <div className="flex w-full items-center justify-between">
+                        <button 
+                            onClick={() => setOpenMobile(false)}
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-800/40 text-slate-300 transition-colors hover:bg-slate-700/60 hover:text-white"
+                        >
+                            <Menu className="h-[22px] w-[22px]" />
+                        </button>
+                        <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-300 transition-colors hover:bg-slate-800/40 hover:text-white">
+                            <Search className="h-5 w-5" />
+                        </button>
+                    </div>
+                ) : (
+                    <SidebarMenu>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton size="lg" asChild className="hover:bg-[#1a1c3d] text-white">
+                                <Link href={dashboard()} prefetch>
+                                    <AppLogo />
+                                </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    </SidebarMenu>
+                )}
             </SidebarHeader>
 
-            <SidebarContent>
+            <SidebarContent className={isMobile ? "px-2" : ""}>
                 <NavMain items={mainNavItems} />
                 {isAdmin && (
                     <div className="mt-2 border-t border-white/10 pt-2">

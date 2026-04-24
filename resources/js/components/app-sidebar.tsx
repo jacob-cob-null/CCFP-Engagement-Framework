@@ -2,7 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     LayoutGrid, CalendarDays, ClipboardCheck, Users, BarChart3,
     Settings, ShieldCheck, Building2, BookOpen, Sliders,
-    Smartphone, Archive, Search, Menu,
+    Smartphone, Archive, Search, Menu, Trophy,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -26,7 +26,7 @@ const mainNavItems: NavItem[] = [
     { title: 'Attendance',       href: '/attendance',        icon: ClipboardCheck },
     { title: 'Live Attendance',  href: '/attendance/live',   icon: Smartphone  },
     { title: 'Employee',         href: '/employee',          icon: Users        },
-    { title: 'Statistics',       href: '/statistics',        icon: BarChart3    },
+    { title: 'Points',           href: '/employee-points',   icon: Trophy       },
     { title: 'Settings',         href: '/settings/profile',  icon: Settings     },
 ];
 
@@ -36,6 +36,7 @@ const adminNavItems: NavItem[] = [
     { title: 'Academic Terms',        href: '/academic-terms',        icon: BookOpen    },
     { title: 'Point Policies',        href: '/point-policies',        icon: Sliders     },
     { title: 'Semester Archive',      href: '/semester-archive',      icon: Archive     },
+    { title: 'Audit Logs',            href: '/audit-logs',            icon: Search      },
 ];
 
 export function AppSidebar() {

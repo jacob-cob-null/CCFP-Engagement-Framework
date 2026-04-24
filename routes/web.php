@@ -18,16 +18,21 @@ Route::redirect('/', '/login')->name('home');
 Route::middleware(['auth'])->group(function () {
 
     // Dashboard
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
-
-    // Statistics (placeholder)
-    Route::inertia('statistics', 'statistics')->name('statistics');
+    Route::get('dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
     // ── Employee Management ──────────────────────────────────────────────────
     Route::get('employee', [EmployeeController::class, 'index'])->name('employee.index');
     Route::post('employee', [EmployeeController::class, 'store'])->name('employee.store');
     Route::patch('employee/{id}', [EmployeeController::class, 'update'])->name('employee.update');
     Route::delete('employee/{id}', [EmployeeController::class, 'destroy'])->name('employee.destroy');
+
+    // ── Points Leaderboard ───────────────────────────────────────────────────
+    Route::get('employee-points', [\App\Http\Controllers\EmployeePointsController::class, 'index'])->name('employee-points.index');
+
+    // ── Data Export ──────────────────────────────────────────────────────────
+    Route::get('export/employees', [\App\Http\Controllers\ExportController::class, 'employees'])->name('export.employees');
+    Route::get('export/attendance/{termId}', [\App\Http\Controllers\ExportController::class, 'attendance'])->name('export.attendance');
+    Route::get('export/points/{termId}', [\App\Http\Controllers\ExportController::class, 'points'])->name('export.points');
 
     // ── Events ───────────────────────────────────────────────────────────────
     Route::get('events/setup', [EventController::class, 'index'])->name('events.setup');
@@ -75,6 +80,9 @@ Route::middleware(['auth'])->group(function () {
         // Semester Archiving
         Route::get('semester-archive', [SemesterArchiveController::class, 'index'])->name('semester-archive.index');
         Route::post('semester-archive/{termId}', [SemesterArchiveController::class, 'archive'])->name('semester-archive.archive');
+
+        // Audit Logs
+        Route::get('audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
     });
 });
 

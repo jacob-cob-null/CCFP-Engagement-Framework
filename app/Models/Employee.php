@@ -49,6 +49,6 @@ class Employee extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('status', 'active')->whereNull('deleted_at');
+        return $query->where($this->getTable() . '.status', 'active')->whereNull($this->getTable() . '.deleted_at');
     }
 }

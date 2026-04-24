@@ -34,7 +34,7 @@ class AcademicTermController extends Controller
         ]);
 
         if (!empty($validated['is_current'])) {
-            AcademicTerm::query()->update(['is_current' => false]);
+            AcademicTerm::query()->update(['is_current' => 'false']);
         }
 
         $term = AcademicTerm::create($validated);
@@ -65,7 +65,7 @@ class AcademicTermController extends Controller
         ]);
 
         if (!empty($validated['is_current'])) {
-            AcademicTerm::query()->where('term_id', '!=', $id)->update(['is_current' => false]);
+            AcademicTerm::query()->where('term_id', '!=', $id)->update(['is_current' => 'false']);
         }
 
         $before = $term->only(['academic_year', 'semester', 'start_date', 'end_date', 'is_current']);

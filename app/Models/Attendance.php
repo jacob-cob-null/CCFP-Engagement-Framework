@@ -53,6 +53,6 @@ class Attendance extends Model
 
     public function scopeActive($query)
     {
-        return $query->whereNull('deleted_at')->whereRaw('"is_archived" = false');
+        return $query->whereNull($this->getTable() . '.deleted_at')->whereRaw('"' . $this->getTable() . '"."is_archived" = false');
     }
 }

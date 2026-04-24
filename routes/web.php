@@ -5,8 +5,10 @@ use App\Http\Controllers\AcademicTermController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\LiveAttendanceController;
 use App\Http\Controllers\OrganizationalUnitController;
 use App\Http\Controllers\PointPolicyController;
+use App\Http\Controllers\SemesterArchiveController;
 use App\Http\Middleware\EnsureIsAdmin;
 use Illuminate\Support\Facades\Route;
 
@@ -16,16 +18,21 @@ Route::redirect('/', '/login')->name('home');
 Route::middleware(['auth'])->group(function () {
 
     // Dashboard
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
-
-    // Statistics (placeholder)
-    Route::inertia('statistics', 'statistics')->name('statistics');
+    Route::get('dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
     // ── Employee Management ──────────────────────────────────────────────────
     Route::get('employee', [EmployeeController::class, 'index'])->name('employee.index');
     Route::post('employee', [EmployeeController::class, 'store'])->name('employee.store');
     Route::patch('employee/{id}', [EmployeeController::class, 'update'])->name('employee.update');
     Route::delete('employee/{id}', [EmployeeController::class, 'destroy'])->name('employee.destroy');
+
+    // ── Points Leaderboard ───────────────────────────────────────────────────
+    Route::get('employee-points', [\App\Http\Controllers\EmployeePointsController::class, 'index'])->name('employee-points.index');
+
+    // ── Data Export ──────────────────────────────────────────────────────────
+    Route::get('export/employees', [\App\Http\Controllers\ExportController::class, 'employees'])->name('export.employees');
+    Route::get('export/attendance/{termId}', [\App\Http\Controllers\ExportController::class, 'attendance'])->name('export.attendance');
+    Route::get('export/points/{termId}', [\App\Http\Controllers\ExportController::class, 'points'])->name('export.points');
 
     // ── Events ───────────────────────────────────────────────────────────────
     Route::get('events/setup', [EventController::class, 'index'])->name('events.setup');
@@ -38,6 +45,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('attendance', [AttendanceController::class, 'store'])->name('attendance.store');
     Route::patch('attendance/{id}', [AttendanceController::class, 'update'])->name('attendance.update');
     Route::delete('attendance/{id}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
+
+    // ── Live / Mobile Attendance ─────────────────────────────────────────────
+    Route::get('attendance/live', [LiveAttendanceController::class, 'index'])->name('attendance.live');
+    Route::post('attendance/live', [LiveAttendanceController::class, 'store'])->name('attendance.live.store');
 
     // ── Admin-only routes ────────────────────────────────────────────────────
     Route::middleware([EnsureIsAdmin::class])->group(function () {
@@ -65,6 +76,13 @@ Route::middleware(['auth'])->group(function () {
         Route::post('users', [AdminUserController::class, 'store'])->name('users.store');
         Route::patch('users/{id}', [AdminUserController::class, 'update'])->name('users.update');
         Route::delete('users/{id}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+
+        // Semester Archiving
+        Route::get('semester-archive', [SemesterArchiveController::class, 'index'])->name('semester-archive.index');
+        Route::post('semester-archive/{termId}', [SemesterArchiveController::class, 'archive'])->name('semester-archive.archive');
+
+        // Audit Logs
+        Route::get('audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
     });
 });
 

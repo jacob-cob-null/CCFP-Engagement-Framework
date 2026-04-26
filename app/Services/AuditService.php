@@ -23,6 +23,18 @@ class AuditService
         string $description,
         ?array $metadata = null
     ): void {
+        // Skip logging for client-side navigation visits (Inertia links)
+        // to avoid creating audit entries on every sidebar click. Allow
+        // server-rendered GETs and other GET requests to be logged.
+        if (function_exists('request') && request() !== null) {
+            $isGet = strtoupper(request()->method() ?? '') === 'GET';
+            $isInertia = (bool) request()->header('X-Inertia');
+
+            if ($isGet && $isInertia) {
+                return;
+            }
+        }
+
         $userId = Auth::id() ?? Auth::user()?->user_id ?? null;
 
         if (!$userId) {

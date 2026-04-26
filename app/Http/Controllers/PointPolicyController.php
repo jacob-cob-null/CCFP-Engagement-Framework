@@ -15,9 +15,9 @@ class PointPolicyController extends Controller
     public function index()
     {
         // Point policies change very rarely — cache for 24 hours
-        $policies = Cache::remember(CacheKeys::POINT_POLICIES, CacheKeys::TTL_STABLE, fn() =>
+        $policies = Inertia::defer(fn() => Cache::remember(CacheKeys::POINT_POLICIES, CacheKeys::TTL_STABLE, fn() =>
             PointPolicy::orderBy('participation_role')->get()->toArray()
-        );
+        ));
 
         return Inertia::render('point-policies', [
             'policies' => $policies,

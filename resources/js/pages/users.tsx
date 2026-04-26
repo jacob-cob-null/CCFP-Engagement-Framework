@@ -1,4 +1,4 @@
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage, Deferred } from '@inertiajs/react';
 import { Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import type { OrganizationalUnit, Paginated, Profile, UserRole } from '@/types';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Props = {
-    users: Paginated<Profile>;
+    users?: Paginated<Profile>;
     units: OrganizationalUnit[];
     filters: { search?: string; role?: string; unit_id?: string };
 };
@@ -304,61 +304,63 @@ export default function UsersPage({ users, units, filters }: Props) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {users.data.length === 0 ? (
-                            <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
-                                    No users found.
-                                </td>
-                            </tr>
-                        ) : (
-                            users.data.map(user => (
-                                <tr key={user.user_id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="px-4 py-3 font-medium text-slate-900">{user.user_name}</td>
-                                    <td className="px-4 py-3 text-slate-600">{user.user_email}</td>
-                                    <td className="px-4 py-3"><RoleBadge role={user.role} /></td>
-                                    <td className="px-4 py-3 text-slate-600">{user.unit_id ?? '—'}</td>
-                                    <td className="px-4 py-3">
-                                        {user.deleted_at ? (
-                                            <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-500">
-                                                Deactivated
-                                            </span>
-                                        ) : (
-                                            <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
-                                                Active
-                                            </span>
-                                        )}
+                        <Deferred data="users" fallback={<UserSkeleton rows={5} columns={6} />}>
+                            {(!users || users.data.length === 0) ? (
+                                <tr>
+                                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                                        No users found.
                                     </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <div className="flex justify-end gap-1">
-                                            <Button
-                                                size="icon"
-                                                variant="ghost"
-                                                title="Edit user"
-                                                onClick={() => setModal({ open: true, mode: 'edit', user })}
-                                            >
-                                                <Pencil className="h-4 w-4 text-slate-500" />
-                                            </Button>
-                                            {!user.deleted_at && (
+                                </tr>
+                            ) : (
+                                users.data.map(user => (
+                                    <tr key={user.user_id} className="hover:bg-slate-50 transition-colors">
+                                        <td className="px-4 py-3 font-medium text-slate-900">{user.user_name}</td>
+                                        <td className="px-4 py-3 text-slate-600">{user.user_email}</td>
+                                        <td className="px-4 py-3"><RoleBadge role={user.role} /></td>
+                                        <td className="px-4 py-3 text-slate-600">{user.unit_id ?? '—'}</td>
+                                        <td className="px-4 py-3">
+                                            {user.deleted_at ? (
+                                                <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-500">
+                                                    Deactivated
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
+                                                    Active
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                            <div className="flex justify-end gap-1">
                                                 <Button
                                                     size="icon"
                                                     variant="ghost"
-                                                    title="Deactivate user"
-                                                    onClick={() => setDeleteTarget(user)}
+                                                    title="Edit user"
+                                                    onClick={() => setModal({ open: true, mode: 'edit', user })}
                                                 >
-                                                    <Trash2 className="h-4 w-4 text-red-400" />
+                                                    <Pencil className="h-4 w-4 text-slate-500" />
                                                 </Button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
+                                                {!user.deleted_at && (
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        title="Deactivate user"
+                                                        onClick={() => setDeleteTarget(user)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4 text-red-400" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </Deferred>
                     </tbody>
                 </table>
             </div>
 
             {/* Pagination */}
-            {users.last_page > 1 && (
+            {users && users.last_page > 1 && (
                 <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
                     <span>
                         Showing {users.from}–{users.to} of {users.total} users
@@ -432,3 +434,19 @@ UsersPage.layout = {
         { title: 'User Management', href: '/users' },
     ],
 };
+
+function UserSkeleton({ rows = 5, columns = 6 }: { rows?: number; columns?: number }) {
+    return (
+        <>
+            {Array.from({ length: rows }).map((_, i) => (
+                <tr key={i} className="animate-pulse border-b border-slate-50">
+                    {Array.from({ length: columns }).map((_, j) => (
+                        <td key={j} className="px-4 py-4">
+                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                        </td>
+                    ))}
+                </tr>
+            ))}
+        </>
+    );
+}

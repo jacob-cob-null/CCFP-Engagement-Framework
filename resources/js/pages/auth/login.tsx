@@ -11,97 +11,152 @@ import { store } from '@/routes/login';
 
 export default function Login() {
     return (
-        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-            <Head title="Log in" />
+        <div className="relative min-h-screen bg-white">
+            <Head title="Log in">
+                <link rel="icon" href="/favicon.ico" />
+            </Head>
 
-            {/* Tabs scaffolding */}
-            <div className="flex border-b text-sm font-medium text-center">
-                <button className="flex-1 py-4 border-b-2 border-indigo-900 text-indigo-900 bg-slate-50 relative z-10 -mb-[1px]">
-                    College Representative
-                </button>
-                <button className="flex-1 py-4 text-slate-500 bg-slate-100 border-b relative z-0">
-                    CCFP
-                </button>
-            </div>
+            {/* Base Background Image with Blue Overlay (visible on all screens) */}
+            <div
+                className="absolute inset-0 z-0"
+                style={{
+                    backgroundImage:
+                        'linear-gradient(rgba(41, 58, 138, 0.7), rgba(41, 58, 138, 0.7)), url("/bg.JPG")',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                }}
+            />
 
-            <div className="p-8">
-                <Form
-                    {...store.form()}
-                    resetOnSuccess={['password']}
-                    className="flex flex-col gap-6"
-                >
-                    {({ processing, errors }) => (
-                        <>
-                            <div className="grid gap-6">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="email" className="font-semibold text-slate-700">Email Address</Label>
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        name="email"
-                                        required
-                                        autoFocus
-                                        tabIndex={1}
-                                        autoComplete="email"
-                                        placeholder="name@institution.edu"
-                                        className="bg-slate-100 border-none shadow-none text-black"
+
+            {/* Center column with the login card — placed above background */}
+            <div className="relative z-10 flex min-h-screen items-center">
+                <div className="flex w-full items-center justify-center p-6">
+                    <div className="w-full max-w-md">
+                        <div className="overflow-hidden rounded-[2rem] border bg-white shadow-2xl">
+                            <div className="border-b bg-gradient-to-r from-[#293a8a]/10 to-white px-10 py-8">
+                                <div className="flex items-center gap-4">
+                                    <img
+                                        src="/favicon.ico"
+                                        alt="CCFP logo"
+                                        className="h-16 w-16 object-contain"
                                     />
-                                    <InputError message={errors.email} />
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <div className="flex items-center">
-                                        <Label htmlFor="password" className="font-semibold text-slate-700">Password</Label>
-                                        <TextLink
-                                            href="#"
-                                            className="ml-auto text-sm text-indigo-900"
-                                            tabIndex={5}
-                                        >
-                                            Forgot Password?
-                                        </TextLink>
+                                    <div>
+                                        <h2 className="text-2xl font-extrabold text-[#293a8a]">
+                                            CCFP Points System
+                                        </h2>
+                                        <p className="mt-1 text-sm text-slate-500">
+                                            Sign in to manage points and
+                                            attendance
+                                        </p>
                                     </div>
-                                    <PasswordInput
-                                        id="password"
-                                        name="password"
-                                        required
-                                        tabIndex={2}
-                                        autoComplete="current-password"
-                                        placeholder="********"
-                                        className="bg-slate-100 border-none shadow-none text-black"
-                                    />
-                                    <InputError message={errors.password} />
                                 </div>
+                            </div>
 
-                                <div className="flex items-center space-x-3">
-                                    <Checkbox
-                                        id="remember"
-                                        name="remember"
-                                        tabIndex={3}
-                                        className="border-slate-300"
-                                    />
-                                    <Label htmlFor="remember" className="font-normal text-slate-600">Remember Me</Label>
-                                </div>
-
-                                <Button
-                                    type="submit"
-                                    className="mt-4 w-full bg-indigo-950 hover:bg-indigo-900 text-white rounded shadow text-md py-6"
-                                    tabIndex={4}
-                                    disabled={processing}
+                            <div className="p-10">
+                                <Form
+                                    {...store.form()}
+                                    resetOnSuccess={['password']}
+                                    className="flex flex-col gap-6"
                                 >
-                                    {processing && <Spinner />}
-                                    Log In <span>&rarr;</span>
-                                </Button>
-                            </div>
+                                    {({ processing, errors }) => (
+                                        <>
+                                            <div className="grid gap-6">
+                                                <div className="grid gap-2">
+                                                    <Label
+                                                        htmlFor="email"
+                                                        className="font-semibold text-slate-700"
+                                                    >
+                                                        Email Address
+                                                    </Label>
+                                                    <Input
+                                                        id="email"
+                                                        type="email"
+                                                        name="email"
+                                                        required
+                                                        autoFocus
+                                                        tabIndex={1}
+                                                        autoComplete="email"
+                                                        placeholder="name@institution.edu"
+                                                        className="rounded-lg border border-slate-200 bg-slate-100 px-4 py-2 text-black"
+                                                    />
+                                                    <InputError
+                                                        message={errors.email}
+                                                    />
+                                                </div>
 
-                            <div className="text-center text-sm mt-4 text-slate-500">
-                                Need access?{' '}
-                                <TextLink href="#" tabIndex={5} className="text-indigo-900">
-                                    Request an Account
-                                </TextLink>
+                                                <div className="grid gap-2">
+                                                    <div className="flex items-center">
+                                                        <Label
+                                                            htmlFor="password"
+                                                            className="font-semibold text-slate-700"
+                                                        >
+                                                            Password
+                                                        </Label>
+                                                    </div>
+
+                                                    <PasswordInput
+                                                        id="password"
+                                                        name="password"
+                                                        required
+                                                        tabIndex={2}
+                                                        autoComplete="current-password"
+                                                        placeholder="********"
+                                                        className="rounded-lg border border-slate-200 bg-slate-100 px-4 py-2 text-black"
+                                                    />
+                                                    <InputError
+                                                        message={
+                                                            errors.password
+                                                        }
+                                                    />
+                                                </div>
+
+                                                <div className="flex items-center space-x-3">
+                                                    <Checkbox
+                                                        id="remember"
+                                                        name="remember"
+                                                        tabIndex={3}
+                                                        className="border-slate-300"
+                                                    />
+                                                    <Label
+                                                        htmlFor="remember"
+                                                        className="font-normal text-slate-600"
+                                                    >
+                                                        Remember Me
+                                                    </Label>
+                                                </div>
+
+                                                <Button
+                                                    type="submit"
+                                                    className="text-md mt-4 w-full rounded-lg bg-[#293a8a] py-3 text-white shadow-md hover:bg-[#293a8a]/90"
+                                                    tabIndex={4}
+                                                    disabled={processing}
+                                                >
+                                                    {processing && <Spinner />}
+                                                    Log In{' '}
+                                                    <span className="ml-2">
+                                                        →
+                                                    </span>
+                                                </Button>
+                                            </div>
+
+                                            <div className="mt-4 text-center text-sm text-slate-500">
+                                                Need access?{' '}
+                                                <TextLink
+                                                    href="#"
+                                                    tabIndex={5}
+                                                    className="text-[#293a8a]"
+                                                >
+                                                    Request an Account
+                                                </TextLink>
+                                            </div>
+                                        </>
+                                    )}
+                                </Form>
                             </div>
-                        </>
-                    )}
-                </Form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

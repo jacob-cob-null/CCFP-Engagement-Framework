@@ -5,16 +5,13 @@ import {
     ClipboardCheck,
     Users,
     BarChart3,
-    Settings,
     ShieldCheck,
     Building2,
     BookOpen,
     Sliders,
-    Smartphone,
     Archive,
     Search,
     Menu,
-    Trophy,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -36,10 +33,7 @@ const mainNavItems: NavItem[] = [
     { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
     { title: 'Events', href: '/events/setup', icon: CalendarDays },
     { title: 'Attendance', href: '/attendance', icon: ClipboardCheck },
-    { title: 'Live Attendance', href: '/attendance/live', icon: Smartphone },
-    { title: 'Employee', href: '/employee', icon: Users },
-    { title: 'Points', href: '/employee-points', icon: Trophy },
-    { title: 'Settings', href: '/settings/profile', icon: Settings },
+    { title: 'Employees', href: '/employee', icon: Users },
 ];
 
 const adminNavItems: NavItem[] = [
@@ -63,8 +57,8 @@ export function AppSidebar() {
     return (
         <Sidebar
             collapsible="icon"
-            variant="inset"
-            className="border-none bg-[#0f112e] text-slate-300"
+            variant="sidebar"
+            className="border-none bg-sidebar text-sidebar-foreground"
         >
             <SidebarHeader className={isMobile ? 'px-2 pt-2 pb-2' : ''}>
                 {isMobile ? (
@@ -87,7 +81,7 @@ export function AppSidebar() {
                                 asChild
                                 className="text-white hover:bg-[#1a1c3d]"
                             >
-                                <Link href={dashboard()}>
+                                <Link href={dashboard()} prefetch>
                                     <AppLogo />
                                 </Link>
                             </SidebarMenuButton>

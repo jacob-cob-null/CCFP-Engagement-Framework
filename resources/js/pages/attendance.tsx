@@ -14,6 +14,12 @@ type Props = {
     filters: { event_id?: string };
 };
 
+type RecentRecord = {
+    attendance_id: string;
+    employee?: Employee;
+    recorded_at: string;
+};
+
 const ROLES: { value: ParticipationRole; label: string }[] = [
     { value: 'participant', label: 'Participant' },
     { value: 'organizer',   label: 'Organizer' },
@@ -118,8 +124,10 @@ function OverrideModal({ record, onClose }: { record: AttendanceRecord; onClose:
 }
 
 export default function AttendancePage({ events, selectedEvent, attendanceRecords, pointPolicies, filters }: Props) {
-    const { props } = usePage<{ flash?: { success?: string } }>();
+    const { props } = usePage<{ flash?: { success?: string }, recentRecords?: RecentRecord[], totalCount?: number }>();
     const flash = props.flash;
+    const recentRecords: RecentRecord[] = props.recentRecords ?? [];
+    const totalCount: number = props.totalCount ?? 0;
 
     const [showRecord, setShowRecord] = useState(false);
     const [overrideTarget, setOverrideTarget] = useState<AttendanceRecord | null>(null);
@@ -180,10 +188,11 @@ export default function AttendancePage({ events, selectedEvent, attendanceRecord
                         </div>
                     ) : (
                         <>
-                            <div className="mb-3 flex items-center justify-between">
+                                <div className="mb-3 flex items-center justify-between">
                                 <div>
                                     <h2 className="font-bold text-slate-900">{selectedEvent.title}</h2>
                                     <p className="text-xs text-slate-500">{selectedEvent.event_date} · {attendanceRecords.length} records · {totalPoints} total pts</p>
+                                    <p className="text-xs text-slate-400">Quick check: {totalCount} present · Recent: {recentRecords.length}</p>
                                 </div>
                                 <Button onClick={() => setShowRecord(true)} className="bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5">
                                     <Plus className="h-4 w-4" /> Record
@@ -191,6 +200,11 @@ export default function AttendancePage({ events, selectedEvent, attendanceRecord
                             </div>
 
                             <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                                {recentRecords.length > 0 && (
+                                    <div className="border-b border-slate-100 px-4 py-2 text-xs text-slate-500">
+                                        Recent records: {recentRecords.map(r => r.employee?.employee_name).join(', ')}
+                                    </div>
+                                )}
                                 <table className="min-w-full divide-y divide-slate-200 text-sm">
                                     <thead className="bg-slate-50">
                                         <tr>

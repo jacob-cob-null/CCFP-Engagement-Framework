@@ -30,6 +30,8 @@ class AttendanceController extends Controller
 
         $attendanceRecords = collect();
         $selectedEvent     = null;
+        $recentRecords     = collect();
+        $totalCount        = 0;
 
         if ($eventId = $request->get('event_id')) {
             $selectedEvent = Event::with('unit', 'term')->where('event_id', $eventId)->active()->first();
@@ -40,6 +42,16 @@ class AttendanceController extends Controller
                     ->active()
                     ->orderBy('recorded_at', 'desc')
                     ->get();
+
+                // Recent records and total count to support quick/live checks on the main page
+                $recentRecords = Attendance::with('employee')
+                    ->where('event_id', $eventId)
+                    ->active()
+                    ->orderBy('recorded_at', 'desc')
+                    ->limit(5)
+                    ->get();
+
+                $totalCount = Attendance::where('event_id', $eventId)->active()->count();
             }
         }
 
@@ -53,6 +65,8 @@ class AttendanceController extends Controller
             'selectedEvent'     => $selectedEvent,
             'attendanceRecords' => $attendanceRecords,
             'pointPolicies'     => $policies,
+            'recentRecords'     => $recentRecords,
+            'totalCount'        => $totalCount,
             'filters'           => $request->only(['event_id']),
         ]);
     }

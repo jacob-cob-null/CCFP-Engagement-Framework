@@ -9,8 +9,11 @@ use App\Services\CacheKeys;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use App\Models\AcademicTerm;
+use App\Models\EmployeePointTotal;
 
 class EmployeeController extends Controller
 {
@@ -42,17 +45,72 @@ class EmployeeController extends Controller
 
         $query->whereNull('deleted_at');
 
-        $employees = $query->orderBy('employee_name')->paginate(25)->withQueryString();
+        // Determine current term for points join/filtering
+        $currentTerm = AcademicTerm::where('is_current', 'true')->first();
+        $termId = $request->get('term_id', $currentTerm?->term_id);
+
+        // Attach current term points to each employee via left join for display in the table
+        $employees = $query
+            ->leftJoin('employee_point_totals as ept', function ($join) use ($termId) {
+                $join->on('employees.employee_id', '=', 'ept.employee_id')
+                     ->where('ept.term_id', '=', $termId ?: DB::raw('null'));
+            })
+            ->select('employees.*', DB::raw('coalesce(ept.total_points, 0) as total_points'))
+            ->orderBy('employee_name')
+            ->paginate(25)
+            ->withQueryString();
 
         // Units dropdown — served from cache, avoiding a second remote DB round-trip
         $units = Cache::remember(CacheKeys::ORG_UNITS, CacheKeys::TTL_REFERENCE, fn() =>
             OrganizationalUnit::active()->orderBy('unit_name')->get(['unit_id', 'unit_name', 'unit_type'])->toArray()
         );
 
+        // Points leaderboard (optional view) — lightweight paginated totals
+        $currentTerm = AcademicTerm::where('is_current', 'true')->first();
+        $termId = $request->get('term_id', $currentTerm?->term_id);
+
+        $pointsQuery = EmployeePointTotal::with(['employee.unit'])
+            ->whereHas('employee', function ($q) { $q->whereNull('deleted_at'); });
+
+        if ($termId) {
+            $pointsQuery->where('term_id', $termId);
+        }
+
+        if ($user->role !== 'ccfp_admin') {
+            $pointsQuery->whereHas('employee', function ($q) use ($user) { $q->where('unit_id', $user->unit_id); });
+        } elseif ($unitId = $request->get('unit_id')) {
+            $pointsQuery->whereHas('employee', function ($q) use ($unitId) { $q->where('unit_id', $unitId); });
+        }
+
+        if ($search = $request->get('points_search')) {
+            $pointsQuery->whereHas('employee', function ($q) use ($search) {
+                $q->where('employee_name', 'ilike', "%{$search}%")
+                  ->orWhere('employee_number', 'like', "%{$search}%");
+            });
+        }
+
+        if ($type = $request->get('points_personnel_type')) {
+            $pointsQuery->whereHas('employee', function ($q) use ($type) { $q->where('personnel_type', $type); });
+        }
+
+        $leaderboard = $pointsQuery->orderByDesc('total_points')->paginate(25)->withQueryString();
+
+        $terms = Cache::remember(CacheKeys::ACADEMIC_TERMS, CacheKeys::TTL_REFERENCE, fn() =>
+            AcademicTerm::orderByDesc('start_date')->get(['term_id', 'academic_year', 'semester', 'is_current'])->toArray()
+        );
+
         return Inertia::render('employee', [
             'employees' => $employees,
             'units'     => $units,
             'filters'   => $request->only(['search', 'personnel_type', 'status', 'unit_id']),
+            'leaderboard' => $leaderboard,
+            'terms' => $terms,
+            'pointsFilters' => [
+                'search' => $request->get('points_search', ''),
+                'term_id' => $termId,
+                'unit_id' => $request->get('unit_id', ''),
+                'personnel_type' => $request->get('points_personnel_type', ''),
+            ],
         ]);
     }
 

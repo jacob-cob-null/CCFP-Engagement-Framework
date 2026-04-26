@@ -1,4 +1,4 @@
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage, Deferred } from '@inertiajs/react';
 import { Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import type { AcademicTerm, Event, EventScope, OrganizationalUnit, Paginated } from '@/types';
 
 type Props = {
-    events: Paginated<Event>;
+    events?: Paginated<Event>;
     terms: AcademicTerm[];
     units: OrganizationalUnit[];
     filters: { search?: string; scope?: string; term_id?: string; unit_id?: string };
@@ -220,40 +220,42 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {events.data.length === 0 ? (
-                            <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">No events found.</td></tr>
-                        ) : events.data.map(event => (
-                            <tr key={event.event_id} className="hover:bg-slate-50 transition-colors">
-                                <td className="px-4 py-3 font-medium text-slate-900">
-                                    {event.title}
-                                    {event.activity_program && <p className="text-xs text-slate-400">{event.activity_program}</p>}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium capitalize ${SCOPE_COLORS[event.scope]}`}>
-                                        {event.scope}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3 text-slate-600">{event.event_date as string}</td>
-                                <td className="px-4 py-3 text-slate-600">
-                                    {event.term ? `${event.term.academic_year} ${event.term.semester}` : event.term_id}
-                                </td>
-                                <td className="px-4 py-3 text-slate-600">
-                                    {event.unit?.unit_name ?? event.unit_id}
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                    <div className="flex justify-end gap-1">
-                                        <Button size="icon" variant="ghost" onClick={() => setModal({ open: true, mode: 'edit', event })}><Pencil className="h-4 w-4 text-slate-500" /></Button>
-                                        <Button size="icon" variant="ghost" onClick={() => setDeleteTarget(event)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
+                        <Deferred data="events" fallback={<TableSkeleton rows={5} columns={6} />}>
+                            {(!events || events.data.length === 0) ? (
+                                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">No events found.</td></tr>
+                            ) : events.data.map(event => (
+                                <tr key={event.event_id} className="hover:bg-slate-50 transition-colors">
+                                    <td className="px-4 py-3 font-medium text-slate-900">
+                                        {event.title}
+                                        {event.activity_program && <p className="text-xs text-slate-400">{event.activity_program}</p>}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium capitalize ${SCOPE_COLORS[event.scope]}`}>
+                                            {event.scope}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-slate-600">{event.event_date as string}</td>
+                                    <td className="px-4 py-3 text-slate-600">
+                                        {event.term ? `${event.term.academic_year} ${event.term.semester}` : event.term_id}
+                                    </td>
+                                    <td className="px-4 py-3 text-slate-600">
+                                        {event.unit?.unit_name ?? event.unit_id}
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                        <div className="flex justify-end gap-1">
+                                            <Button size="icon" variant="ghost" onClick={() => setModal({ open: true, mode: 'edit', event })}><Pencil className="h-4 w-4 text-slate-500" /></Button>
+                                            <Button size="icon" variant="ghost" onClick={() => setDeleteTarget(event)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </Deferred>
                     </tbody>
                 </table>
             </div>
 
             {/* Pagination */}
-            {events.last_page > 1 && (
+            {events && events.last_page > 1 && (
                 <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
                     <span>Showing {events.from}–{events.to} of {events.total}</span>
                     <div className="flex gap-1">
@@ -298,3 +300,19 @@ EventsSetupPage.layout = {
         { title: 'Events', href: '/events/setup' },
     ],
 };
+
+function TableSkeleton({ rows = 5, columns = 6 }: { rows?: number; columns?: number }) {
+    return (
+        <>
+            {Array.from({ length: rows }).map((_, i) => (
+                <tr key={i} className="animate-pulse border-b border-slate-50">
+                    {Array.from({ length: columns }).map((_, j) => (
+                        <td key={j} className="px-4 py-4">
+                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                        </td>
+                    ))}
+                </tr>
+            ))}
+        </>
+    );
+}

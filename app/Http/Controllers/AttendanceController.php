@@ -37,21 +37,21 @@ class AttendanceController extends Controller
             $selectedEvent = Event::with('unit', 'term')->where('event_id', $eventId)->active()->first();
 
             if ($selectedEvent) {
-                $attendanceRecords = Attendance::with('employee')
+                $attendanceRecords = Inertia::defer(fn() => Attendance::with('employee')
                     ->where('event_id', $eventId)
                     ->active()
                     ->orderBy('recorded_at', 'desc')
-                    ->get();
+                    ->get());
 
                 // Recent records and total count to support quick/live checks on the main page
-                $recentRecords = Attendance::with('employee')
+                $recentRecords = Inertia::defer(fn() => Attendance::with('employee')
                     ->where('event_id', $eventId)
                     ->active()
                     ->orderBy('recorded_at', 'desc')
                     ->limit(5)
-                    ->get();
+                    ->get());
 
-                $totalCount = Attendance::where('event_id', $eventId)->active()->count();
+                $totalCount = Inertia::defer(fn() => Attendance::where('event_id', $eventId)->active()->count());
             }
         }
 

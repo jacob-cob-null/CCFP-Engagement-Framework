@@ -1,4 +1,4 @@
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage, Deferred } from '@inertiajs/react';
 import { Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import type {
 } from '@/types';
 
 type Props = {
-    employees: Paginated<Employee>;
+    employees?: Paginated<Employee>;
     units: OrganizationalUnit[];
     filters: {
         search?: string;
@@ -36,7 +36,7 @@ type LeaderboardEntry = {
 };
 
 type PointsProps = {
-    leaderboard: Paginated<LeaderboardEntry>;
+    leaderboard?: Paginated<LeaderboardEntry>;
     terms: {
         term_id: string;
         academic_year: string;
@@ -301,7 +301,7 @@ export default function EmployeePage({
                     </h1>
                     <p className="mt-1 text-sm text-slate-500">
                         Manage full-time employee profiles. Total:{' '}
-                        {employees.total}
+                        {employees?.total ?? 0}
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -411,82 +411,84 @@ export default function EmployeePage({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {employees.data.length === 0 ? (
-                            <tr>
-                                <td
-                                    colSpan={7}
-                                    className="px-4 py-8 text-center text-slate-400"
-                                >
-                                    No employees found.
-                                </td>
-                            </tr>
-                        ) : (
-                            employees.data.map((emp) => (
-                                <tr
-                                    key={emp.employee_id}
-                                    className="transition-colors hover:bg-slate-50"
-                                >
-                                    <td className="px-4 py-3 font-mono text-xs text-slate-500">
-                                        {emp.employee_number}
-                                    </td>
-                                    <td className="px-4 py-3 font-medium text-slate-900">
-                                        {emp.employee_name}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span
-                                            className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${emp.personnel_type === 'teaching' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}
-                                        >
-                                            {emp.personnel_type}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-slate-600">
-                                        {emp.unit?.unit_name ?? emp.unit_id}
-                                    </td>
-                                    <td className="px-4 py-3 text-right font-mono text-sm text-emerald-700">
-                                        {(emp as any).total_points ?? 0}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span
-                                            className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${emp.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}
-                                        >
-                                            {emp.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <div className="flex justify-end gap-1">
-                                            <Button
-                                                size="icon"
-                                                variant="ghost"
-                                                onClick={() =>
-                                                    setModal({
-                                                        open: true,
-                                                        mode: 'edit',
-                                                        employee: emp,
-                                                    })
-                                                }
-                                            >
-                                                <Pencil className="h-4 w-4 text-slate-500" />
-                                            </Button>
-                                            <Button
-                                                size="icon"
-                                                variant="ghost"
-                                                onClick={() =>
-                                                    setDeleteTarget(emp)
-                                                }
-                                            >
-                                                <Trash2 className="h-4 w-4 text-red-400" />
-                                            </Button>
-                                        </div>
+                        <Deferred data="employees" fallback={<EmployeeSkeleton rows={5} columns={7} />}>
+                            {(!employees || employees.data.length === 0) ? (
+                                <tr>
+                                    <td
+                                        colSpan={7}
+                                        className="px-4 py-8 text-center text-slate-400"
+                                    >
+                                        No employees found.
                                     </td>
                                 </tr>
-                            ))
-                        )}
+                            ) : (
+                                employees.data.map((emp) => (
+                                    <tr
+                                        key={emp.employee_id}
+                                        className="transition-colors hover:bg-slate-50"
+                                    >
+                                        <td className="px-4 py-3 font-mono text-xs text-slate-500">
+                                            {emp.employee_number}
+                                        </td>
+                                        <td className="px-4 py-3 font-medium text-slate-900">
+                                            {emp.employee_name}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <span
+                                                className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${emp.personnel_type === 'teaching' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}
+                                            >
+                                                {emp.personnel_type}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-slate-600">
+                                            {emp.unit?.unit_name ?? emp.unit_id}
+                                        </td>
+                                        <td className="px-4 py-3 text-right font-mono text-sm text-emerald-700">
+                                            {(emp as any).total_points ?? 0}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <span
+                                                className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${emp.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}
+                                            >
+                                                {emp.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                            <div className="flex justify-end gap-1">
+                                                <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    onClick={() =>
+                                                        setModal({
+                                                            open: true,
+                                                            mode: 'edit',
+                                                            employee: emp,
+                                                        })
+                                                    }
+                                                >
+                                                    <Pencil className="h-4 w-4 text-slate-500" />
+                                                </Button>
+                                                <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    onClick={() =>
+                                                        setDeleteTarget(emp)
+                                                    }
+                                                >
+                                                    <Trash2 className="h-4 w-4 text-red-400" />
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </Deferred>
                     </tbody>
                 </table>
             </div>
 
             {/* Pagination */}
-            {employees.last_page > 1 && (
+            {employees && employees.last_page > 1 && (
                 <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
                     <span>
                         Showing {employees.from}–{employees.to} of{' '}
@@ -567,3 +569,19 @@ EmployeePage.layout = {
         { title: 'Employees', href: '/employee' },
     ],
 };
+
+function EmployeeSkeleton({ rows = 5, columns = 7 }: { rows?: number; columns?: number }) {
+    return (
+        <>
+            {Array.from({ length: rows }).map((_, i) => (
+                <tr key={i} className="animate-pulse border-b border-slate-50">
+                    {Array.from({ length: columns }).map((_, j) => (
+                        <td key={j} className="px-4 py-4">
+                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                        </td>
+                    ))}
+                </tr>
+            ))}
+        </>
+    );
+}

@@ -1,5 +1,4 @@
-import { Head, router } from '@inertiajs/react';
-import { useForm } from '@inertiajs/react';
+import { Head, router, useForm, Deferred } from '@inertiajs/react';
 import { Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { PointPolicy, ParticipationRole } from '@/types';
 
-type Props = { policies: PointPolicy[] };
+type Props = { policies?: PointPolicy[] };
 
 type PolicyForm = {
     participation_role: ParticipationRole | '';
@@ -81,7 +80,7 @@ export default function PointPoliciesPage({ policies }: Props) {
     const [modal, setModal] = useState<{ open: boolean; mode: 'create' | 'edit'; policy?: PointPolicy }>({ open: false, mode: 'create' });
     const [deleteTarget, setDeleteTarget] = useState<PointPolicy | null>(null);
 
-    const existingRoles = new Set(policies.map(p => p.participation_role));
+    const existingRoles = new Set(policies?.map(p => p.participation_role) ?? []);
     const allRolesDefined = ROLES.every(r => existingRoles.has(r.value));
 
     function confirmDelete() {
@@ -121,28 +120,30 @@ export default function PointPoliciesPage({ policies }: Props) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {policies.length === 0 ? (
-                            <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">No policies defined yet.</td></tr>
-                        ) : policies.map(policy => {
-                            const roleInfo = ROLES.find(r => r.value === policy.participation_role);
-                            return (
-                                <tr key={policy.policy_id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="px-4 py-3 font-medium capitalize text-slate-900">{policy.participation_role}</td>
-                                    <td className="px-4 py-3 text-slate-500">{roleInfo?.desc}</td>
-                                    <td className="px-4 py-3">
-                                        <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700">
-                                            {policy.default_points} pt{policy.default_points !== 1 ? 's' : ''}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <div className="flex justify-end gap-1">
-                                            <Button size="icon" variant="ghost" onClick={() => setModal({ open: true, mode: 'edit', policy })}><Pencil className="h-4 w-4 text-slate-500" /></Button>
-                                            <Button size="icon" variant="ghost" onClick={() => setDeleteTarget(policy)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })}
+                        <Deferred data="policies" fallback={<PolicySkeleton rows={3} columns={4} />}>
+                            {(!policies || policies.length === 0) ? (
+                                <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">No policies defined yet.</td></tr>
+                            ) : policies.map(policy => {
+                                const roleInfo = ROLES.find(r => r.value === policy.participation_role);
+                                return (
+                                    <tr key={policy.policy_id} className="hover:bg-slate-50 transition-colors">
+                                        <td className="px-4 py-3 font-medium capitalize text-slate-900">{policy.participation_role}</td>
+                                        <td className="px-4 py-3 text-slate-500">{roleInfo?.desc}</td>
+                                        <td className="px-4 py-3">
+                                            <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700">
+                                                {policy.default_points} pt{policy.default_points !== 1 ? 's' : ''}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                            <div className="flex justify-end gap-1">
+                                                <Button size="icon" variant="ghost" onClick={() => setModal({ open: true, mode: 'edit', policy })}><Pencil className="h-4 w-4 text-slate-500" /></Button>
+                                                <Button size="icon" variant="ghost" onClick={() => setDeleteTarget(policy)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </Deferred>
                     </tbody>
                 </table>
             </div>
@@ -171,3 +172,19 @@ PointPoliciesPage.layout = {
         { title: 'Point Policies', href: '/point-policies' },
     ],
 };
+
+function PolicySkeleton({ rows = 3, columns = 4 }: { rows?: number; columns?: number }) {
+    return (
+        <>
+            {Array.from({ length: rows }).map((_, i) => (
+                <tr key={i} className="animate-pulse border-b border-slate-50">
+                    {Array.from({ length: columns }).map((_, j) => (
+                        <td key={j} className="px-4 py-4">
+                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                        </td>
+                    ))}
+                </tr>
+            ))}
+        </>
+    );
+}

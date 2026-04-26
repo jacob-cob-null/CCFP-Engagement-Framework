@@ -41,8 +41,6 @@ class EventController extends Controller
 
         $query->active();
 
-        $events = $query->orderByDesc('event_date')->paginate(25)->withQueryString();
-
         // Both dropdowns served from cache — save 2 remote DB round-trips per request
         $terms = Cache::remember(CacheKeys::ACADEMIC_TERMS, CacheKeys::TTL_REFERENCE, fn() =>
             AcademicTerm::orderByDesc('start_date')->get(['term_id', 'academic_year', 'semester', 'is_current'])->toArray()
@@ -53,7 +51,7 @@ class EventController extends Controller
         );
 
         return Inertia::render('events/setup', [
-            'events'  => $events,
+            'events'  => Inertia::defer(fn() => $query->orderByDesc('event_date')->paginate(25)->withQueryString()),
             'terms'   => $terms,
             'units'   => $units,
             'filters' => $request->only(['search', 'scope', 'term_id', 'unit_id']),

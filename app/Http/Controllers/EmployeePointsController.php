@@ -54,9 +54,9 @@ class EmployeePointsController extends Controller
             });
         }
 
-        $leaderboard = $query->orderByDesc('total_points')
+        $leaderboard = Inertia::defer(fn() => $query->orderByDesc('total_points')
             ->paginate(25)
-            ->withQueryString();
+            ->withQueryString());
 
         $terms = Cache::remember(CacheKeys::ACADEMIC_TERMS, CacheKeys::TTL_REFERENCE, fn() =>
             AcademicTerm::orderByDesc('start_date')->get(['term_id', 'academic_year', 'semester', 'is_current'])->toArray()

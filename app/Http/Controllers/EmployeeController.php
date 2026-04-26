@@ -50,7 +50,7 @@ class EmployeeController extends Controller
         $termId = $request->get('term_id', $currentTerm?->term_id);
 
         // Attach current term points to each employee via left join for display in the table
-        $employees = $query
+        $employees = Inertia::defer(fn() => $query
             ->leftJoin('employee_point_totals as ept', function ($join) use ($termId) {
                 $join->on('employees.employee_id', '=', 'ept.employee_id')
                      ->where('ept.term_id', '=', $termId ?: DB::raw('null'));
@@ -58,7 +58,7 @@ class EmployeeController extends Controller
             ->select('employees.*', DB::raw('coalesce(ept.total_points, 0) as total_points'))
             ->orderBy('employee_name')
             ->paginate(25)
-            ->withQueryString();
+            ->withQueryString());
 
         // Units dropdown — served from cache, avoiding a second remote DB round-trip
         $units = Cache::remember(CacheKeys::ORG_UNITS, CacheKeys::TTL_REFERENCE, fn() =>
@@ -93,7 +93,7 @@ class EmployeeController extends Controller
             $pointsQuery->whereHas('employee', function ($q) use ($type) { $q->where('personnel_type', $type); });
         }
 
-        $leaderboard = $pointsQuery->orderByDesc('total_points')->paginate(25)->withQueryString();
+        $leaderboard = Inertia::defer(fn() => $pointsQuery->orderByDesc('total_points')->paginate(25)->withQueryString());
 
         $terms = Cache::remember(CacheKeys::ACADEMIC_TERMS, CacheKeys::TTL_REFERENCE, fn() =>
             AcademicTerm::orderByDesc('start_date')->get(['term_id', 'academic_year', 'semester', 'is_current'])->toArray()

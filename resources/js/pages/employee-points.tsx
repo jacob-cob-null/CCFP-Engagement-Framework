@@ -1,4 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, router, usePage, Deferred } from '@inertiajs/react';
 import { Download, Search, Building2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ type LeaderboardEntry = {
 };
 
 type Props = {
-    leaderboard: Paginated<LeaderboardEntry>;
+    leaderboard?: Paginated<LeaderboardEntry>;
     terms: AcademicTerm[];
     units: OrganizationalUnit[];
     filters: {
@@ -130,43 +130,45 @@ export default function EmployeePointsPage({ leaderboard, terms, units, filters 
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {leaderboard.data.length === 0 ? (
-                            <tr><td colSpan={5} className="px-6 py-10 text-center text-slate-400">No point records found.</td></tr>
-                        ) : leaderboard.data.map((entry, i) => (
-                            <tr key={entry.employee_id} className="hover:bg-slate-50/80 transition-colors">
-                                <td className="px-6 py-4">
-                                    <div className="text-slate-500 font-medium w-8 text-center">{leaderboard.from! + i}</div>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <p className="font-semibold text-slate-900">{entry.employee.employee_name}</p>
-                                    <p className="font-mono text-xs text-slate-400 mt-0.5">#{entry.employee.employee_number}</p>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
-                                        <Building2 className="h-3.5 w-3.5 text-slate-400" />
-                                        {entry.employee.unit?.unit_id || 'N/A'}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
-                                        ${entry.employee.personnel_type === 'teaching' ? 'bg-indigo-50 text-indigo-700' : 'bg-sky-50 text-sky-700'}`}>
-                                        {entry.employee.personnel_type}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                    <div className="inline-flex items-baseline gap-1 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100/50">
-                                        <span className="text-lg font-bold text-emerald-700 leading-none">{entry.total_points}</span>
-                                        <span className="text-xs font-medium text-emerald-600/80 uppercase tracking-widest">pts</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
+                        <Deferred data="leaderboard" fallback={<PointsSkeleton rows={10} />}>
+                            {(!leaderboard || leaderboard.data.length === 0) ? (
+                                <tr><td colSpan={5} className="px-6 py-10 text-center text-slate-400">No point records found.</td></tr>
+                            ) : leaderboard.data.map((entry, i) => (
+                                <tr key={entry.employee_id} className="hover:bg-slate-50/80 transition-colors">
+                                    <td className="px-6 py-4">
+                                        <div className="text-slate-500 font-medium w-8 text-center">{leaderboard.from! + i}</div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <p className="font-semibold text-slate-900">{entry.employee.employee_name}</p>
+                                        <p className="font-mono text-xs text-slate-400 mt-0.5">#{entry.employee.employee_number}</p>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
+                                            <Building2 className="h-3.5 w-3.5 text-slate-400" />
+                                            {entry.employee.unit?.unit_id || 'N/A'}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
+                                            ${entry.employee.personnel_type === 'teaching' ? 'bg-indigo-50 text-indigo-700' : 'bg-sky-50 text-sky-700'}`}>
+                                            {entry.employee.personnel_type}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="inline-flex items-baseline gap-1 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100/50">
+                                            <span className="text-lg font-bold text-emerald-700 leading-none">{entry.total_points}</span>
+                                            <span className="text-xs font-medium text-emerald-600/80 uppercase tracking-widest">pts</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </Deferred>
                     </tbody>
                 </table>
             </div>
 
             {/* Pagination */}
-            {leaderboard.last_page > 1 && (
+            {leaderboard && leaderboard.last_page > 1 && (
                 <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
                     <span>Showing {leaderboard.from}–{leaderboard.to} of {leaderboard.total}</span>
                     <div className="flex gap-1">
@@ -192,3 +194,30 @@ EmployeePointsPage.layout = {
         { title: 'Points', href: '/employee-points' },
     ],
 };
+
+function PointsSkeleton({ rows = 10 }: { rows?: number }) {
+    return (
+        <>
+            {Array.from({ length: rows }).map((_, i) => (
+                <tr key={i} className="animate-pulse border-b border-slate-50">
+                    <td className="px-6 py-4">
+                        <div className="h-4 bg-slate-200 rounded w-4 mx-auto"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                        <div className="h-4 bg-slate-200 rounded w-32 mb-2"></div>
+                        <div className="h-3 bg-slate-100 rounded w-16"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                        <div className="h-4 bg-slate-100 rounded w-12"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                        <div className="h-5 bg-slate-100 rounded-full w-20"></div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                        <div className="h-10 bg-emerald-50/50 rounded-lg w-16 ml-auto"></div>
+                    </td>
+                </tr>
+            ))}
+        </>
+    );
+}

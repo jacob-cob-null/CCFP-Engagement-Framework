@@ -25,7 +25,7 @@ class SemesterArchiveController extends Controller
     public function index()
     {
         // Load each term with counts of active + archived attendance records
-        $terms = AcademicTerm::orderByDesc('start_date')
+        $terms = Inertia::defer(fn() => AcademicTerm::orderByDesc('start_date')
             ->get()
             ->map(function (AcademicTerm $term) {
                 // Count attendance records linked to this term's events
@@ -52,7 +52,7 @@ class SemesterArchiveController extends Controller
                     'active_count'   => $activeCount,
                     'archived_count' => $archivedCount,
                 ];
-            });
+            }));
 
         return Inertia::render('admin/semester-archive', [
             'terms' => $terms,

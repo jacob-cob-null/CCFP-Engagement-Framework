@@ -1,4 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, router, usePage, Deferred } from '@inertiajs/react';
 import { Search, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import type { ActivityLog, Paginated } from '@/types';
 
 type Props = {
-    logs: Paginated<ActivityLog>;
+    logs?: Paginated<ActivityLog>;
     actionTypes: string[];
     filters: { search?: string; action_type?: string };
 };
@@ -64,25 +64,27 @@ export default function AuditLogsPage({ logs, actionTypes, filters }: Props) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-mono text-xs">
-                        {logs.data.length === 0 ? (
-                            <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400 font-sans text-sm">No activity logs found.</td></tr>
-                        ) : logs.data.map(log => (
-                            <tr key={log.log_id} className="hover:bg-slate-50 transition-colors">
-                                <td className="px-4 py-3 text-slate-500">{new Date(log.created_at).toLocaleString()}</td>
-                                <td className="px-4 py-3 font-medium text-slate-700">{log.user?.user_name || log.user_id}</td>
-                                <td className="px-4 py-3"><span className="text-indigo-700 bg-indigo-50/50 px-2 py-0.5 rounded">{log.action_type}</span></td>
-                                <td className="px-4 py-3 text-slate-600 max-w-sm"><div className="truncate" title={log.description}>{log.description}</div></td>
-                                <td className="px-4 py-3 text-right">
-                                    <Button size="icon" variant="ghost" onClick={() => setSelectedLog(log)}><Eye className="h-4 w-4 text-slate-500" /></Button>
-                                </td>
-                            </tr>
-                        ))}
+                        <Deferred data="logs" fallback={<AuditSkeleton rows={10} />}>
+                            {(!logs || logs.data.length === 0) ? (
+                                <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400 font-sans text-sm">No activity logs found.</td></tr>
+                            ) : logs.data.map(log => (
+                                <tr key={log.log_id} className="hover:bg-slate-50 transition-colors">
+                                    <td className="px-4 py-3 text-slate-500">{new Date(log.created_at).toLocaleString()}</td>
+                                    <td className="px-4 py-3 font-medium text-slate-700">{log.user?.user_name || log.user_id}</td>
+                                    <td className="px-4 py-3"><span className="text-indigo-700 bg-indigo-50/50 px-2 py-0.5 rounded">{log.action_type}</span></td>
+                                    <td className="px-4 py-3 text-slate-600 max-w-sm"><div className="truncate" title={log.description}>{log.description}</div></td>
+                                    <td className="px-4 py-3 text-right">
+                                        <Button size="icon" variant="ghost" onClick={() => setSelectedLog(log)}><Eye className="h-4 w-4 text-slate-500" /></Button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </Deferred>
                     </tbody>
                 </table>
             </div>
 
             {/* Pagination */}
-            {logs.last_page > 1 && (
+            {logs && logs.last_page > 1 && (
                 <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
                     <span>Showing {logs.from}–{logs.to} of {logs.total}</span>
                     <div className="flex gap-1">
@@ -130,3 +132,29 @@ AuditLogsPage.layout = {
         { title: 'Audit Logs', href: '/audit-logs' },
     ],
 };
+
+function AuditSkeleton({ rows = 10 }: { rows?: number }) {
+    return (
+        <>
+            {Array.from({ length: rows }).map((_, i) => (
+                <tr key={i} className="animate-pulse border-b border-slate-50">
+                    <td className="px-4 py-4">
+                        <div className="h-3 bg-slate-200 rounded w-24"></div>
+                    </td>
+                    <td className="px-4 py-4">
+                        <div className="h-4 bg-slate-200 rounded w-20"></div>
+                    </td>
+                    <td className="px-4 py-4">
+                        <div className="h-5 bg-slate-100 rounded w-16"></div>
+                    </td>
+                    <td className="px-4 py-4">
+                        <div className="h-3 bg-slate-200 rounded w-48"></div>
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                        <div className="h-8 bg-slate-100 rounded w-8 ml-auto"></div>
+                    </td>
+                </tr>
+            ))}
+        </>
+    );
+}

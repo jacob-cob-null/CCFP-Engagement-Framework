@@ -1,4 +1,4 @@
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage, Deferred } from '@inertiajs/react';
 import { CalendarDays, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import type {
 type Props = {
     events: Event[];
     selectedEvent: Event | null;
-    attendanceRecords: AttendanceRecord[];
+    attendanceRecords?: AttendanceRecord[];
     pointPolicies: PointPolicy[];
     filters: { event_id?: string };
 };
@@ -286,7 +286,7 @@ export default function AttendancePage({
         });
     }
 
-    const totalPoints = attendanceRecords.reduce(
+    const totalPoints = (attendanceRecords || []).reduce(
         (sum, r) => sum + r.points_awarded,
         0,
     );
@@ -360,7 +360,7 @@ export default function AttendancePage({
                                     </h2>
                                     <p className="text-xs text-slate-500">
                                         {selectedEvent.event_date} ·{' '}
-                                        {attendanceRecords.length} records ·{' '}
+                                        {attendanceRecords?.length ?? 0} records ·{' '}
                                         {totalPoints} total pts
                                     </p>
                                     <p className="text-xs text-slate-400">
@@ -409,88 +409,90 @@ export default function AttendancePage({
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {attendanceRecords.length === 0 ? (
-                                            <tr>
-                                                <td
-                                                    colSpan={5}
-                                                    className="px-4 py-8 text-center text-slate-400"
-                                                >
-                                                    No attendance recorded yet.
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            attendanceRecords.map((rec) => (
-                                                <tr
-                                                    key={rec.attendance_id}
-                                                    className="transition-colors hover:bg-slate-50"
-                                                >
-                                                    <td className="px-4 py-3 font-medium text-slate-900">
-                                                        {
-                                                            rec.employee
-                                                                ?.employee_name
-                                                        }
-                                                        <span className="ml-1 font-mono text-xs text-slate-400">
-                                                            #
-                                                            {
-                                                                rec.employee
-                                                                    ?.employee_number
-                                                            }
-                                                        </span>
-                                                        {rec.is_manual_override && (
-                                                            <span className="ml-1 rounded bg-orange-100 px-1 text-xs text-orange-600">
-                                                                override
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-slate-600 capitalize">
-                                                        {rec.participation_role}
-                                                    </td>
-                                                    <td className="px-4 py-3">
-                                                        <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">
-                                                            {rec.points_awarded}{' '}
-                                                            pt
-                                                            {rec.points_awarded !==
-                                                            1
-                                                                ? 's'
-                                                                : ''}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-xs text-slate-400">
-                                                        {new Date(
-                                                            rec.recorded_at,
-                                                        ).toLocaleString()}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <div className="flex justify-end gap-1">
-                                                            <Button
-                                                                size="icon"
-                                                                variant="ghost"
-                                                                title="Override"
-                                                                onClick={() =>
-                                                                    setOverrideTarget(
-                                                                        rec,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Pencil className="h-4 w-4 text-slate-500" />
-                                                            </Button>
-                                                            <Button
-                                                                size="icon"
-                                                                variant="ghost"
-                                                                title="Remove"
-                                                                onClick={() =>
-                                                                    setDeleteTarget(
-                                                                        rec,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Trash2 className="h-4 w-4 text-red-400" />
-                                                            </Button>
-                                                        </div>
+                                        <Deferred data="attendanceRecords" fallback={<AttendanceSkeleton rows={5} />}>
+                                            {(!attendanceRecords || attendanceRecords.length === 0) ? (
+                                                <tr>
+                                                    <td
+                                                        colSpan={5}
+                                                        className="px-4 py-8 text-center text-slate-400"
+                                                    >
+                                                        No attendance recorded yet.
                                                     </td>
                                                 </tr>
-                                            ))
-                                        )}
+                                            ) : (
+                                                attendanceRecords.map((rec) => (
+                                                    <tr
+                                                        key={rec.attendance_id}
+                                                        className="transition-colors hover:bg-slate-50"
+                                                    >
+                                                        <td className="px-4 py-3 font-medium text-slate-900">
+                                                            {
+                                                                rec.employee
+                                                                    ?.employee_name
+                                                            }
+                                                            <span className="ml-1 font-mono text-xs text-slate-400">
+                                                                #
+                                                                {
+                                                                    rec.employee
+                                                                        ?.employee_number
+                                                                }
+                                                            </span>
+                                                            {rec.is_manual_override && (
+                                                                <span className="ml-1 rounded bg-orange-100 px-1 text-xs text-orange-600">
+                                                                    override
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-slate-600 capitalize">
+                                                            {rec.participation_role}
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">
+                                                                {rec.points_awarded}{' '}
+                                                                pt
+                                                                {rec.points_awarded !==
+                                                                1
+                                                                    ? 's'
+                                                                    : ''}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-xs text-slate-400">
+                                                            {new Date(
+                                                                rec.recorded_at,
+                                                            ).toLocaleString()}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            <div className="flex justify-end gap-1">
+                                                                <Button
+                                                                    size="icon"
+                                                                    variant="ghost"
+                                                                    title="Override"
+                                                                    onClick={() =>
+                                                                        setOverrideTarget(
+                                                                            rec,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Pencil className="h-4 w-4 text-slate-500" />
+                                                                </Button>
+                                                                <Button
+                                                                    size="icon"
+                                                                    variant="ghost"
+                                                                    title="Remove"
+                                                                    onClick={() =>
+                                                                        setDeleteTarget(
+                                                                            rec,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="h-4 w-4 text-red-400" />
+                                                                </Button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </Deferred>
                                     </tbody>
                                 </table>
                             </div>
@@ -552,3 +554,33 @@ AttendancePage.layout = {
         { title: 'Attendance', href: '/attendance' },
     ],
 };
+
+function AttendanceSkeleton({ rows = 5 }: { rows?: number }) {
+    return (
+        <>
+            {Array.from({ length: rows }).map((_, i) => (
+                <tr key={i} className="animate-pulse border-b border-slate-50">
+                    <td className="px-4 py-4">
+                        <div className="h-4 bg-slate-200 rounded w-3/4 mb-1.5"></div>
+                        <div className="h-3 bg-slate-200 rounded w-1/4"></div>
+                    </td>
+                    <td className="px-4 py-4">
+                        <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                    </td>
+                    <td className="px-4 py-4">
+                        <div className="h-5 bg-slate-200 rounded-full w-16"></div>
+                    </td>
+                    <td className="px-4 py-4">
+                        <div className="h-3 bg-slate-200 rounded w-24"></div>
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                        <div className="flex justify-end gap-1">
+                            <div className="w-8 h-8 bg-slate-200 rounded"></div>
+                            <div className="w-8 h-8 bg-slate-200 rounded"></div>
+                        </div>
+                    </td>
+                </tr>
+            ))}
+        </>
+    );
+}

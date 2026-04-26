@@ -1,4 +1,4 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, Deferred } from '@inertiajs/react';
 import { Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import type { OrganizationalUnit, Paginated } from '@/types';
 
 type Props = {
-    units: Paginated<OrganizationalUnit>;
+    units?: Paginated<OrganizationalUnit>;
     filters: { search?: string; type?: string };
 };
 
@@ -125,25 +125,27 @@ export default function OrganizationalUnitsPage({ units, filters }: Props) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {units.data.length === 0 ? (
-                            <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">No units found.</td></tr>
-                        ) : units.data.map(unit => (
-                            <tr key={unit.unit_id} className="hover:bg-slate-50 transition-colors">
-                                <td className="px-4 py-3 font-mono text-xs text-slate-700">{unit.unit_id}</td>
-                                <td className="px-4 py-3 font-medium text-slate-900">{unit.unit_name}</td>
-                                <td className="px-4 py-3">
-                                    <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${unit.unit_type === 'college' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
-                                        {unit.unit_type}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                    <div className="flex justify-end gap-1">
-                                        <Button size="icon" variant="ghost" onClick={() => setModal({ open: true, mode: 'edit', unit })}><Pencil className="h-4 w-4 text-slate-500" /></Button>
-                                        <Button size="icon" variant="ghost" onClick={() => setDeleteTarget(unit)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
+                        <Deferred data="units" fallback={<UnitSkeleton rows={5} columns={4} />}>
+                            {(!units || units.data.length === 0) ? (
+                                <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">No units found.</td></tr>
+                            ) : units.data.map(unit => (
+                                <tr key={unit.unit_id} className="hover:bg-slate-50 transition-colors">
+                                    <td className="px-4 py-3 font-mono text-xs text-slate-700">{unit.unit_id}</td>
+                                    <td className="px-4 py-3 font-medium text-slate-900">{unit.unit_name}</td>
+                                    <td className="px-4 py-3">
+                                        <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${unit.unit_type === 'college' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                                            {unit.unit_type}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                        <div className="flex justify-end gap-1">
+                                            <Button size="icon" variant="ghost" onClick={() => setModal({ open: true, mode: 'edit', unit })}><Pencil className="h-4 w-4 text-slate-500" /></Button>
+                                            <Button size="icon" variant="ghost" onClick={() => setDeleteTarget(unit)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </Deferred>
                     </tbody>
                 </table>
             </div>
@@ -172,3 +174,19 @@ OrganizationalUnitsPage.layout = {
         { title: 'Organizational Units', href: '/organizational-units' },
     ],
 };
+
+function UnitSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
+    return (
+        <>
+            {Array.from({ length: rows }).map((_, i) => (
+                <tr key={i} className="animate-pulse border-b border-slate-50">
+                    {Array.from({ length: columns }).map((_, j) => (
+                        <td key={j} className="px-4 py-4">
+                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                        </td>
+                    ))}
+                </tr>
+            ))}
+        </>
+    );
+}

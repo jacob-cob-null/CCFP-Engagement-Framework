@@ -46,7 +46,7 @@ class AdminUserController extends Controller
             $query->where('unit_id', $unitId);
         }
 
-        $users = $query->orderBy('user_name')->paginate(25)->withQueryString();
+        $users = Inertia::defer(fn() => $query->orderBy('user_name')->paginate(25)->withQueryString());
         // Units dropdown served from file cache — avoids a second Supabase round-trip on every /users load
         $units = Cache::remember(CacheKeys::ORG_UNITS, CacheKeys::TTL_REFERENCE, fn() =>
             OrganizationalUnit::orderBy('unit_name')->get(['unit_id', 'unit_name', 'unit_type'])->toArray()

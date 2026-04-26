@@ -1,4 +1,4 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, Deferred } from '@inertiajs/react';
 import { Pencil, Plus, Star, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { AcademicTerm } from '@/types';
 
-type Props = { terms: AcademicTerm[] };
+type Props = { terms?: AcademicTerm[] };
 
 type TermForm = {
     term_id: string;
@@ -136,31 +136,33 @@ export default function AcademicTermsPage({ terms }: Props) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {terms.length === 0 ? (
-                            <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">No terms configured yet.</td></tr>
-                        ) : terms.map(term => (
-                            <tr key={term.term_id} className="hover:bg-slate-50 transition-colors">
-                                <td className="px-4 py-3 font-medium text-slate-900">{term.academic_year}</td>
-                                <td className="px-4 py-3 capitalize text-slate-600">{term.semester} Semester</td>
-                                <td className="px-4 py-3 text-slate-600">{term.start_date}</td>
-                                <td className="px-4 py-3 text-slate-600">{term.end_date}</td>
-                                <td className="px-4 py-3">
-                                    {term.is_current ? (
-                                        <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
-                                            <Star className="h-3 w-3" /> Current
-                                        </span>
-                                    ) : (
-                                        <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-500">Past</span>
-                                    )}
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                    <div className="flex justify-end gap-1">
-                                        <Button size="icon" variant="ghost" onClick={() => setModal({ open: true, mode: 'edit', term })}><Pencil className="h-4 w-4 text-slate-500" /></Button>
-                                        <Button size="icon" variant="ghost" onClick={() => setDeleteTarget(term)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
+                        <Deferred data="terms" fallback={<TermSkeleton rows={5} columns={6} />}>
+                            {(!terms || terms.length === 0) ? (
+                                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">No terms configured yet.</td></tr>
+                            ) : terms.map(term => (
+                                <tr key={term.term_id} className="hover:bg-slate-50 transition-colors">
+                                    <td className="px-4 py-3 font-medium text-slate-900">{term.academic_year}</td>
+                                    <td className="px-4 py-3 capitalize text-slate-600">{term.semester} Semester</td>
+                                    <td className="px-4 py-3 text-slate-600">{term.start_date}</td>
+                                    <td className="px-4 py-3 text-slate-600">{term.end_date}</td>
+                                    <td className="px-4 py-3">
+                                        {term.is_current ? (
+                                            <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
+                                                <Star className="h-3 w-3" /> Current
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-500">Past</span>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                        <div className="flex justify-end gap-1">
+                                            <Button size="icon" variant="ghost" onClick={() => setModal({ open: true, mode: 'edit', term })}><Pencil className="h-4 w-4 text-slate-500" /></Button>
+                                            <Button size="icon" variant="ghost" onClick={() => setDeleteTarget(term)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </Deferred>
                     </tbody>
                 </table>
             </div>
@@ -189,3 +191,19 @@ AcademicTermsPage.layout = {
         { title: 'Academic Terms', href: '/academic-terms' },
     ],
 };
+
+function TermSkeleton({ rows = 5, columns = 6 }: { rows?: number; columns?: number }) {
+    return (
+        <>
+            {Array.from({ length: rows }).map((_, i) => (
+                <tr key={i} className="animate-pulse border-b border-slate-50">
+                    {Array.from({ length: columns }).map((_, j) => (
+                        <td key={j} className="px-4 py-4">
+                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                        </td>
+                    ))}
+                </tr>
+            ))}
+        </>
+    );
+}

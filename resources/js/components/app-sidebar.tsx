@@ -57,7 +57,7 @@ export function AppSidebar() {
     return (
         <Sidebar
             collapsible="icon"
-            variant="inset"
+            variant="sidebar"
             className="border-none bg-sidebar text-sidebar-foreground"
         >
             <SidebarHeader className={isMobile ? 'px-2 pt-2 pb-2' : ''}>

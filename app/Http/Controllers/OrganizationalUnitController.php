@@ -25,15 +25,39 @@ class OrganizationalUnitController extends Controller
         }
 
         // Only apply cache when no filters are active (filtered views are dynamic)
-        $units = ($request->hasAny(['search', 'type']))
-            ? $query->whereNull('deleted_at')->whereRaw('"is_archived" = false')->orderBy('unit_name')->paginate(25)->withQueryString()
-            : Cache::remember(CacheKeys::ORG_UNITS . ':paginated', CacheKeys::TTL_REFERENCE, fn() =>
-                OrganizationalUnit::whereNull('deleted_at')
+        // Always cache and return a paginator, never a collection/array
+        $cacheKey = CacheKeys::ORG_UNITS . ':paginated';
+        // Normalize: always work with a paginator-shaped array to avoid
+        // storing/reading serialized LengthAwarePaginator instances from cache
+        // (which can cause __PHP_Incomplete_Class errors on unserialize).
+        if ($request->hasAny(['search', 'type'])) {
+            $units = $query->whereNull('deleted_at')
+                ->whereRaw('"is_archived" = false')
+                ->orderBy('unit_name')
+                ->paginate(25)
+                ->withQueryString()
+                ->toArray();
+        } else {
+            $units = Cache::remember($cacheKey, CacheKeys::TTL_REFERENCE, function () {
+                return OrganizationalUnit::whereNull('deleted_at')
                     ->whereRaw('"is_archived" = false')
                     ->orderBy('unit_name')
                     ->paginate(25)
                     ->withQueryString()
-              );
+                    ->toArray();
+            });
+            // If cache was polluted with a non-array value, clear and recache
+            if (!is_array($units) || !array_key_exists('data', $units)) {
+                Cache::forget($cacheKey);
+                $units = OrganizationalUnit::whereNull('deleted_at')
+                    ->whereRaw('"is_archived" = false')
+                    ->orderBy('unit_name')
+                    ->paginate(25)
+                    ->withQueryString()
+                    ->toArray();
+                Cache::put($cacheKey, $units, CacheKeys::TTL_REFERENCE);
+            }
+        }
 
         return Inertia::render('organizational-units', [
             'units'   => $units,

@@ -81,7 +81,7 @@ export function AppSidebar() {
                                 asChild
                                 className="text-white hover:bg-[#1a1c3d]"
                             >
-                                <Link href={dashboard()}>
+                                <Link href={dashboard()} prefetch>
                                     <AppLogo />
                                 </Link>
                             </SidebarMenuButton>

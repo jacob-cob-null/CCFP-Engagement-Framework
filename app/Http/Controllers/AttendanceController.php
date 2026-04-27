@@ -190,4 +190,67 @@ class AttendanceController extends Controller
             ->with('success', 'Attendance record removed.');
     }
 
+    public function getEmployees(Request $request)
+    {
+        $query = Employee::active();
+
+        if ($orgId = $request->get('org_id')) {
+            $query->where('unit_id', $orgId);
+        }
+
+        $employees = $query->orderBy('employee_name')
+            ->get(['employee_id', 'employee_name', 'employee_number', 'personnel_type', 'unit_id']);
+
+        return response()->json($employees);
+    }
+
+    public function recordAttendance(Request $request)
+    {
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:employees,employee_id',
+            'event_id'    => 'required|exists:events,event_id',
+            'role'        => 'required|in:participant,organizer,donor',
+        ]);
+
+        $event = Event::where('event_id', $validated['event_id'])->active()->firstOrFail();
+        $employee = Employee::where('employee_id', $validated['employee_id'])->whereNull('deleted_at')->firstOrFail();
+
+        $existing = Attendance::where('event_id', $event->event_id)
+            ->where('employee_id', $employee->employee_id)
+            ->active()
+            ->first();
+
+        if ($existing) {
+            return back()->withErrors([
+                'employee_id' => "{$employee->employee_name} is already recorded for this event."
+            ]);
+        }
+
+        $pointsAwarded = PointCalculationService::calculatePoints($event, $validated['role']);
+
+        $attendance = Attendance::create([
+            'attendance_id'      => (string) Str::uuid(),
+            'employee_id'        => $employee->employee_id,
+            'event_id'           => $event->event_id,
+            'participation_role' => $validated['role'],
+            'points_awarded'     => $pointsAwarded,
+            'recorded_by'        => Auth::user()->user_id,
+        ]);
+
+        PointCalculationService::recalculateTotal($employee->employee_id, $event->term_id);
+
+        AuditService::log(
+            actionType:  'attendance_recorded',
+            targetId:    $attendance->attendance_id,
+            description: "Recorded attendance for {$employee->employee_name} at event '{$event->title}' ({$validated['role']}, {$pointsAwarded} pts) via Quick Record.",
+            metadata:    [
+                'employee_id'        => $employee->employee_id,
+                'event_id'           => $event->event_id,
+                'participation_role' => $validated['role'],
+                'points_awarded'     => $pointsAwarded,
+            ],
+        );
+
+        return back()->with('success', "{$employee->employee_name} recorded ({$pointsAwarded} pts).");
+    }
 }

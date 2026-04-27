@@ -37,7 +37,7 @@ class PointPolicyController extends Controller
         $this->invalidateCache();
 
         AuditService::log(
-            actionType:  'create_point_policy',
+            actionType:  'policy_created',
             targetId:    $policy->policy_id,
             description: "Created point policy: {$policy->participation_role} = {$policy->default_points} pts.",
             metadata:    $validated,
@@ -61,7 +61,7 @@ class PointPolicyController extends Controller
         $this->invalidateCache();
 
         AuditService::log(
-            actionType:  'update_point_policy',
+            actionType:  'policy_updated',
             targetId:    $id,
             description: "Updated point policy for {$policy->participation_role}: {$before['default_points']} → {$validated['default_points']} pts.",
             metadata:    ['role' => $policy->participation_role, 'before' => $before, 'after' => $validated],
@@ -81,7 +81,7 @@ class PointPolicyController extends Controller
         $this->invalidateCache();
 
         AuditService::log(
-            actionType:  'delete_point_policy',
+            actionType:  'policy_deleted',
             targetId:    $id,
             description: "Deleted point policy for role: {$role}.",
             metadata:    ['role' => $role],

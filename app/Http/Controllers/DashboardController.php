@@ -118,7 +118,7 @@ class DashboardController extends Controller
                 return [
                     'personnel_type' => [
                         'teaching' => $byType['teaching'] ?? 0,
-                        'non_teaching' => $byType['non-teaching'] ?? 0,
+                        'non_teaching' => $byType['non_teaching'] ?? 0,
                     ],
                     'event_scope' => [
                         'university' => $byScope['university'] ?? 0,

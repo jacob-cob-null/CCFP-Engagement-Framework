@@ -113,7 +113,7 @@ class AttendanceController extends Controller
         PointCalculationService::recalculateTotal($employee->employee_id, $event->term_id);
 
         AuditService::log(
-            actionType:  'create_attendance',
+            actionType:  'attendance_recorded',
             targetId:    $attendance->attendance_id,
             description: "Recorded attendance for {$employee->employee_name} at event '{$event->title}' ({$validated['participation_role']}, {$pointsAwarded} pts).",
             metadata:    [
@@ -152,7 +152,7 @@ class AttendanceController extends Controller
         }
 
         AuditService::log(
-            actionType:  'update_attendance',
+            actionType:  'attendance_edited',
             targetId:    $id,
             description: "Manual point override for attendance {$id}: {$before['points_awarded']} → {$validated['points_awarded']} pts. Reason: {$validated['override_reason']}",
             metadata:    ['before' => $before, 'after' => $validated],
@@ -177,7 +177,7 @@ class AttendanceController extends Controller
         }
 
         AuditService::log(
-            actionType:  'delete_attendance',
+            actionType:  'attendance_deleted',
             targetId:    $id,
             description: "Soft-deleted attendance record {$id}.",
             metadata:    [

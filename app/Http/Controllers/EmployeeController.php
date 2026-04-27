@@ -119,7 +119,7 @@ class EmployeeController extends Controller
         $validated = $request->validate([
             'employee_number' => 'required|integer|unique:employees,employee_number',
             'employee_name'   => 'required|string|max:255',
-            'personnel_type'  => 'required|in:teaching,non-teaching',
+            'personnel_type'  => 'required|in:teaching,non_teaching',
             'unit_id'         => 'required|exists:organizational_units,unit_id',
             'status'          => 'sometimes|in:active,inactive',
         ]);
@@ -130,7 +130,7 @@ class EmployeeController extends Controller
         $employee = Employee::create($validated);
 
         AuditService::log(
-            actionType:  'create_employee',
+            actionType:  'employee_created',
             targetId:    $employee->employee_id,
             description: "Created employee: {$employee->employee_name} (#{$employee->employee_number}).",
             metadata:    $validated,
@@ -147,7 +147,7 @@ class EmployeeController extends Controller
         $validated = $request->validate([
             'employee_number' => "required|integer|unique:employees,employee_number,{$employee->employee_number},employee_number",
             'employee_name'   => 'required|string|max:255',
-            'personnel_type'  => 'required|in:teaching,non-teaching',
+            'personnel_type'  => 'required|in:teaching,non_teaching',
             'unit_id'         => 'required|exists:organizational_units,unit_id',
             'status'          => 'required|in:active,inactive',
         ]);
@@ -156,7 +156,7 @@ class EmployeeController extends Controller
         $employee->update($validated);
 
         AuditService::log(
-            actionType:  'update_employee',
+            actionType:  'employee_updated',
             targetId:    $id,
             description: "Updated employee: {$employee->employee_name}.",
             metadata:    ['before' => $before, 'after' => $validated],
@@ -179,7 +179,7 @@ class EmployeeController extends Controller
         ]);
 
         AuditService::log(
-            actionType:  'delete_employee',
+            actionType:  'employee_deleted',
             targetId:    $id,
             description: "Soft-deleted employee: {$employee->employee_name} (#{$employee->employee_number}).",
             metadata:    ['name' => $employee->employee_name, 'number' => $employee->employee_number],

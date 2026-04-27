@@ -5,7 +5,7 @@
 
 export type UserRole = 'ccfp_admin' | 'college_rep' | 'org_rep';
 
-export type PersonnelType = 'teaching' | 'non-teaching';
+export type PersonnelType = 'teaching' | 'non_teaching';
 
 export type EmployeeStatus = 'active' | 'inactive';
 

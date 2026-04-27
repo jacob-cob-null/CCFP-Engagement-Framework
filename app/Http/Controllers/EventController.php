@@ -100,7 +100,7 @@ class EventController extends Controller
         }
 
         AuditService::log(
-            actionType:  'create_event',
+            actionType:  'event_created',
             targetId:    $event->event_id,
             description: "Created event: {$event->title} (scope: {$event->scope}).",
             metadata:    $validated,
@@ -151,7 +151,7 @@ class EventController extends Controller
         }
 
         AuditService::log(
-            actionType:  'update_event',
+            actionType:  'event_edited',
             targetId:    $id,
             description: "Updated event: {$event->title}.",
             metadata:    ['before' => $before, 'after' => $validated],
@@ -171,7 +171,7 @@ class EventController extends Controller
         ]);
 
         AuditService::log(
-            actionType:  'delete_event',
+            actionType:  'event_deleted',
             targetId:    $id,
             description: "Soft-deleted event: {$event->title}.",
             metadata:    ['title' => $event->title, 'scope' => $event->scope],

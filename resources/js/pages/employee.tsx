@@ -438,20 +438,20 @@ export default function EmployeePage({
                                             <span
                                                 className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${emp.personnel_type === 'teaching' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}
                                             >
-                                                {emp.personnel_type}
+                                                {emp.personnel_type.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('-')}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-slate-600">
                                             {emp.unit?.unit_name ?? emp.unit_id}
                                         </td>
-                                        <td className="px-4 py-3 text-right font-mono text-sm text-emerald-700">
+                                        <td className="px-4 py-3 text-left flex justify-start font-mono text-sm text-emerald-700">
                                             {(emp as any).total_points ?? 0}
                                         </td>
                                         <td className="px-4 py-3">
                                             <span
                                                 className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${emp.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}
                                             >
-                                                {emp.status}
+                                                {emp.status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('-')}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-right">

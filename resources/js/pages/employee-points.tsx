@@ -151,7 +151,7 @@ export default function EmployeePointsPage({ leaderboard, terms, units, filters 
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
                                             ${entry.employee.personnel_type === 'teaching' ? 'bg-indigo-50 text-indigo-700' : 'bg-sky-50 text-sky-700'}`}>
-                                            {entry.employee.personnel_type}
+                                            {entry.employee.personnel_type.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('-')}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right">

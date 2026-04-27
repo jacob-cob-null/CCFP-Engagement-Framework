@@ -1,4 +1,5 @@
 import { Head, router, useForm, usePage, Deferred } from '@inertiajs/react';
+import { EmployeeTableRowsSkeleton } from '@/components/skeletons/employee-skeleton';
 import { Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -411,7 +412,7 @@ export default function EmployeePage({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        <Deferred data="employees" fallback={<EmployeeSkeleton rows={5} columns={7} />}>
+                        <Deferred data="employees" fallback={<EmployeeTableRowsSkeleton rows={5} columns={7} />}>
                             {(!employees || employees.data.length === 0) ? (
                                 <tr>
                                     <td
@@ -570,18 +571,4 @@ EmployeePage.layout = {
     ],
 };
 
-function EmployeeSkeleton({ rows = 5, columns = 7 }: { rows?: number; columns?: number }) {
-    return (
-        <>
-            {Array.from({ length: rows }).map((_, i) => (
-                <tr key={i} className="animate-pulse border-b border-slate-50">
-                    {Array.from({ length: columns }).map((_, j) => (
-                        <td key={j} className="px-4 py-4">
-                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-                        </td>
-                    ))}
-                </tr>
-            ))}
-        </>
-    );
-}
+

@@ -1,4 +1,5 @@
 import { Head, router, useForm, Deferred } from '@inertiajs/react';
+import { TermTableRowsSkeleton } from '@/components/skeletons/academic-terms-skeleton';
 import { Pencil, Plus, Star, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -136,7 +137,7 @@ export default function AcademicTermsPage({ terms }: Props) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        <Deferred data="terms" fallback={<TermSkeleton rows={5} columns={6} />}>
+                        <Deferred data="terms" fallback={<TermTableRowsSkeleton rows={5} columns={6} />}>
                             {(!terms || terms.length === 0) ? (
                                 <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">No terms configured yet.</td></tr>
                             ) : terms.map(term => (
@@ -192,18 +193,4 @@ AcademicTermsPage.layout = {
     ],
 };
 
-function TermSkeleton({ rows = 5, columns = 6 }: { rows?: number; columns?: number }) {
-    return (
-        <>
-            {Array.from({ length: rows }).map((_, i) => (
-                <tr key={i} className="animate-pulse border-b border-slate-50">
-                    {Array.from({ length: columns }).map((_, j) => (
-                        <td key={j} className="px-4 py-4">
-                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-                        </td>
-                    ))}
-                </tr>
-            ))}
-        </>
-    );
-}
+

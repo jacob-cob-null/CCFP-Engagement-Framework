@@ -1,4 +1,5 @@
 import { Head, router, useForm, Deferred } from '@inertiajs/react';
+import { PolicyTableRowsSkeleton } from '@/components/skeletons/point-policies-skeleton';
 import { Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -120,7 +121,7 @@ export default function PointPoliciesPage({ policies }: Props) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        <Deferred data="policies" fallback={<PolicySkeleton rows={3} columns={4} />}>
+                        <Deferred data="policies" fallback={<PolicyTableRowsSkeleton rows={3} columns={4} />}>
                             {(!policies || policies.length === 0) ? (
                                 <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">No policies defined yet.</td></tr>
                             ) : policies.map(policy => {
@@ -173,18 +174,4 @@ PointPoliciesPage.layout = {
     ],
 };
 
-function PolicySkeleton({ rows = 3, columns = 4 }: { rows?: number; columns?: number }) {
-    return (
-        <>
-            {Array.from({ length: rows }).map((_, i) => (
-                <tr key={i} className="animate-pulse border-b border-slate-50">
-                    {Array.from({ length: columns }).map((_, j) => (
-                        <td key={j} className="px-4 py-4">
-                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-                        </td>
-                    ))}
-                </tr>
-            ))}
-        </>
-    );
-}
+

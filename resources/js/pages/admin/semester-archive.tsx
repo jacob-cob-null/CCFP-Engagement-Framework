@@ -1,4 +1,5 @@
 import { Head, router, usePage, Deferred } from '@inertiajs/react';
+import { ArchiveTableRowsSkeleton } from '@/components/skeletons/semester-archive-skeleton';
 import { Archive, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -95,7 +96,7 @@ export default function SemesterArchivePage({ terms }: Props) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        <Deferred data="terms" fallback={<ArchiveSkeleton rows={5} />}>
+                        <Deferred data="terms" fallback={<ArchiveTableRowsSkeleton rows={5} />}>
                             {(!terms || terms.length === 0) ? (
                                 <tr>
                                     <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
@@ -178,28 +179,4 @@ SemesterArchivePage.layout = {
     ],
 };
 
-function ArchiveSkeleton({ rows = 5 }: { rows?: number }) {
-    return (
-        <>
-            {Array.from({ length: rows }).map((_, i) => (
-                <tr key={i} className="animate-pulse border-b border-slate-50">
-                    <td className="px-4 py-4">
-                        <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                    </td>
-                    <td className="px-4 py-4">
-                        <div className="h-4 bg-slate-200 rounded w-3/4 mx-auto"></div>
-                    </td>
-                    <td className="px-4 py-4">
-                        <div className="h-5 bg-slate-100 rounded-full w-8 mx-auto"></div>
-                    </td>
-                    <td className="px-4 py-4">
-                        <div className="h-5 bg-slate-100 rounded-full w-8 mx-auto"></div>
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                        <div className="h-8 bg-slate-200 rounded w-20 ml-auto"></div>
-                    </td>
-                </tr>
-            ))}
-        </>
-    );
-}
+

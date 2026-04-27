@@ -1,4 +1,5 @@
 import { Head, router, usePage, Deferred } from '@inertiajs/react';
+import { AuditTableRowsSkeleton } from '@/components/skeletons/audit-logs-skeleton';
 import { Search, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -64,7 +65,7 @@ export default function AuditLogsPage({ logs, actionTypes, filters }: Props) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-mono text-xs">
-                        <Deferred data="logs" fallback={<AuditSkeleton rows={10} />}>
+                        <Deferred data="logs" fallback={<AuditTableRowsSkeleton rows={10} />}>
                             {(!logs || logs.data.length === 0) ? (
                                 <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400 font-sans text-sm">No activity logs found.</td></tr>
                             ) : logs.data.map(log => (
@@ -133,28 +134,4 @@ AuditLogsPage.layout = {
     ],
 };
 
-function AuditSkeleton({ rows = 10 }: { rows?: number }) {
-    return (
-        <>
-            {Array.from({ length: rows }).map((_, i) => (
-                <tr key={i} className="animate-pulse border-b border-slate-50">
-                    <td className="px-4 py-4">
-                        <div className="h-3 bg-slate-200 rounded w-24"></div>
-                    </td>
-                    <td className="px-4 py-4">
-                        <div className="h-4 bg-slate-200 rounded w-20"></div>
-                    </td>
-                    <td className="px-4 py-4">
-                        <div className="h-5 bg-slate-100 rounded w-16"></div>
-                    </td>
-                    <td className="px-4 py-4">
-                        <div className="h-3 bg-slate-200 rounded w-48"></div>
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                        <div className="h-8 bg-slate-100 rounded w-8 ml-auto"></div>
-                    </td>
-                </tr>
-            ))}
-        </>
-    );
-}
+

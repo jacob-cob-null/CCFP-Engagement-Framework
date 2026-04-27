@@ -1,4 +1,5 @@
 import { Head, router, useForm, usePage, Deferred } from '@inertiajs/react';
+import { AttendanceTableRowsSkeleton } from '@/components/skeletons/attendance-skeleton';
 import { CalendarDays, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -409,7 +410,7 @@ export default function AttendancePage({
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        <Deferred data="attendanceRecords" fallback={<AttendanceSkeleton rows={5} />}>
+                                        <Deferred data="attendanceRecords" fallback={<AttendanceTableRowsSkeleton rows={5} />}>
                                             {(!attendanceRecords || attendanceRecords.length === 0) ? (
                                                 <tr>
                                                     <td
@@ -555,32 +556,4 @@ AttendancePage.layout = {
     ],
 };
 
-function AttendanceSkeleton({ rows = 5 }: { rows?: number }) {
-    return (
-        <>
-            {Array.from({ length: rows }).map((_, i) => (
-                <tr key={i} className="animate-pulse border-b border-slate-50">
-                    <td className="px-4 py-4">
-                        <div className="h-4 bg-slate-200 rounded w-3/4 mb-1.5"></div>
-                        <div className="h-3 bg-slate-200 rounded w-1/4"></div>
-                    </td>
-                    <td className="px-4 py-4">
-                        <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                    </td>
-                    <td className="px-4 py-4">
-                        <div className="h-5 bg-slate-200 rounded-full w-16"></div>
-                    </td>
-                    <td className="px-4 py-4">
-                        <div className="h-3 bg-slate-200 rounded w-24"></div>
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                        <div className="flex justify-end gap-1">
-                            <div className="w-8 h-8 bg-slate-200 rounded"></div>
-                            <div className="w-8 h-8 bg-slate-200 rounded"></div>
-                        </div>
-                    </td>
-                </tr>
-            ))}
-        </>
-    );
-}
+

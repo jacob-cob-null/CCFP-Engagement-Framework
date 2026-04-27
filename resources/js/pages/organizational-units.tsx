@@ -1,4 +1,5 @@
 import { Head, router, useForm, Deferred } from '@inertiajs/react';
+import { UnitTableRowsSkeleton } from '@/components/skeletons/organizational-units-skeleton';
 import { Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -125,7 +126,7 @@ export default function OrganizationalUnitsPage({ units, filters }: Props) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        <Deferred data="units" fallback={<UnitSkeleton rows={5} columns={4} />}>
+                        <Deferred data="units" fallback={<UnitTableRowsSkeleton rows={5} columns={4} />}>
                             {(!units || units.data.length === 0) ? (
                                 <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">No units found.</td></tr>
                             ) : units.data.map(unit => (
@@ -175,18 +176,4 @@ OrganizationalUnitsPage.layout = {
     ],
 };
 
-function UnitSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
-    return (
-        <>
-            {Array.from({ length: rows }).map((_, i) => (
-                <tr key={i} className="animate-pulse border-b border-slate-50">
-                    {Array.from({ length: columns }).map((_, j) => (
-                        <td key={j} className="px-4 py-4">
-                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-                        </td>
-                    ))}
-                </tr>
-            ))}
-        </>
-    );
-}
+

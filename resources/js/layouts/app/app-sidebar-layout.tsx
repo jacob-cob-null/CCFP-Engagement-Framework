@@ -4,25 +4,32 @@ import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
+import { UsersSkeleton } from '@/components/skeletons/users-skeleton';
+import { EmployeeSkeleton } from '@/components/skeletons/employee-skeleton';
+import { AttendanceSkeleton } from '@/components/skeletons/attendance-skeleton';
+import { DashboardSkeleton } from '@/components/skeletons/dashboard-skeleton';
+import { AcademicTermsSkeleton } from '@/components/skeletons/academic-terms-skeleton';
+import { OrganizationalUnitsSkeleton } from '@/components/skeletons/organizational-units-skeleton';
+import { PointPoliciesSkeleton } from '@/components/skeletons/point-policies-skeleton';
+import { AuditLogsSkeleton } from '@/components/skeletons/audit-logs-skeleton';
+import { SemesterArchiveSkeleton } from '@/components/skeletons/semester-archive-skeleton';
 import type { AppLayoutProps } from '@/types';
 
 export default function AppSidebarLayout({
     children,
     breadcrumbs = [],
 }: AppLayoutProps) {
-    const [isNavigating, setIsNavigating] = useState(false);
+    const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
 
     useEffect(() => {
-        // Trigger skeleton immediately on GET requests
         const unbindStart = router.on('start', (event) => {
             if (event.detail.visit.method === 'get') {
-                setIsNavigating(true);
+                setNavigatingTo(event.detail.visit.url.pathname);
             }
         });
 
-        // Hide skeleton when the visit finishes (successfully or with error)
         const unbindFinish = router.on('finish', () => {
-            setIsNavigating(false);
+            setNavigatingTo(null);
         });
 
         return () => {
@@ -31,38 +38,60 @@ export default function AppSidebarLayout({
         };
     }, []);
 
+    const renderSkeleton = () => {
+        if (!navigatingTo) return null;
+        
+        if (navigatingTo === '/dashboard' || navigatingTo === '/') {
+            return <DashboardSkeleton />;
+        }
+        
+        if (navigatingTo.startsWith('/users')) {
+            return <UsersSkeleton />;
+        }
+
+        if (navigatingTo.startsWith('/employee')) {
+            return <EmployeeSkeleton />;
+        }
+
+        if (navigatingTo.startsWith('/attendance')) {
+            return <AttendanceSkeleton />;
+        }
+
+        if (navigatingTo.startsWith('/academic-terms')) {
+            return <AcademicTermsSkeleton />;
+        }
+
+        if (navigatingTo.startsWith('/organizational-units')) {
+            return <OrganizationalUnitsSkeleton />;
+        }
+
+        if (navigatingTo.startsWith('/point-policies')) {
+            return <PointPoliciesSkeleton />;
+        }
+
+        if (navigatingTo.startsWith('/audit-logs')) {
+            return <AuditLogsSkeleton />;
+        }
+
+        if (navigatingTo.startsWith('/semester-archive')) {
+            return <SemesterArchiveSkeleton />;
+        }
+        
+        return <div className="p-8 bg-[#fafafa] animate-pulse text-slate-400">Loading...</div>;
+    };
+
     return (
         <AppShell variant="sidebar">
             <AppSidebar />
             <AppContent variant="sidebar" className="overflow-x-hidden relative">
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
                 
-                {/* Immediate Navigation Skeleton Overlay */}
-                {isNavigating && (
-                    <div className="absolute inset-0 z-50 bg-[#fafafa] p-8 animate-in fade-in duration-200">
-                        <div className="space-y-6">
-                            <div className="space-y-2">
-                                <div className="h-8 w-64 animate-pulse rounded bg-slate-200" />
-                                <div className="h-4 w-96 animate-pulse rounded bg-slate-100" />
-                            </div>
-                            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                                <div className="space-y-4">
-                                    <div className="h-10 w-full animate-pulse rounded bg-slate-50" />
-                                    {Array.from({ length: 8 }).map((_, i) => (
-                                        <div key={i} className="flex gap-4">
-                                            <div className="h-4 flex-1 animate-pulse rounded bg-slate-100" />
-                                            <div className="h-4 flex-1 animate-pulse rounded bg-slate-100" />
-                                            <div className="h-4 w-24 animate-pulse rounded bg-slate-100" />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                <div className={isNavigating ? 'invisible' : 'visible'}>
-                    {children}
+                <div className="relative flex-1 flex flex-col">
+                    {navigatingTo ? (
+                        renderSkeleton()
+                    ) : (
+                        <div>{children}</div>
+                    )}
                 </div>
             </AppContent>
         </AppShell>

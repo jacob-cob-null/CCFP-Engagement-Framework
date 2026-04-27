@@ -11,7 +11,7 @@ type Props = { policies?: PointPolicy[] };
 
 type PolicyForm = {
     participation_role: ParticipationRole | '';
-    default_points: number;
+    default_points: number | '';
 };
 
 const ROLES: { value: ParticipationRole; label: string; desc: string }[] = [
@@ -21,13 +21,20 @@ const ROLES: { value: ParticipationRole; label: string; desc: string }[] = [
 ];
 
 function PolicyModal({ mode, policy, onClose }: { mode: 'create' | 'edit'; policy?: PointPolicy; onClose: () => void }) {
-    const { data, setData, post, patch, processing, errors, reset } = useForm<PolicyForm>({
+    const { data, setData, post, patch, processing, errors, reset, transform } = useForm<PolicyForm>({
         participation_role: (policy?.participation_role ?? '') as PolicyForm['participation_role'],
         default_points:     policy?.default_points ?? 1,
     });
 
     function submit(e: React.FormEvent) {
         e.preventDefault();
+        
+        // Ensure default_points is submitted as a number
+        transform((data) => ({
+            ...data,
+            default_points: Number(data.default_points) || 0,
+        }));
+
         if (mode === 'create') {
             post('/point-policies', { onSuccess: () => { reset(); onClose(); } });
         } else {
@@ -62,7 +69,7 @@ function PolicyModal({ mode, policy, onClose }: { mode: 'create' | 'edit'; polic
                     <div className="grid gap-1.5">
                         <Label htmlFor="pts">Default Points</Label>
                         <Input id="pts" type="number" min={0} value={data.default_points}
-                            onChange={e => setData('default_points', parseInt(e.target.value) || 0)} required />
+                            onChange={e => setData('default_points', e.target.value === '' ? '' : parseInt(e.target.value))} required />
                         {errors.default_points && <p className="text-xs text-red-500">{errors.default_points}</p>}
                     </div>
                     <div className="flex justify-end gap-2 pt-2">
@@ -92,13 +99,13 @@ export default function PointPoliciesPage({ policies }: Props) {
     return (
         <div className="flex flex-col flex-1 p-8 bg-[#fafafa] min-h-screen">
             <Head title="Point Policies" />
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left sm:gap-0">
                 <div>
                     <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Point Policies</h1>
                     <p className="mt-1 text-sm text-slate-500">Configure default point values per participation role.</p>
                 </div>
                 {!allRolesDefined && (
-                    <Button onClick={() => setModal({ open: true, mode: 'create' })} className="bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5">
+                    <Button onClick={() => setModal({ open: true, mode: 'create' })} className="bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5 w-full sm:w-auto">
                         <Plus className="h-4 w-4" /> Add Policy
                     </Button>
                 )}
@@ -110,7 +117,7 @@ export default function PointPoliciesPage({ policies }: Props) {
                 </div>
             )}
 
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
                 <table className="min-w-full divide-y divide-slate-200 text-sm">
                     <thead className="bg-slate-50">
                         <tr>

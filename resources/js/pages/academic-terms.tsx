@@ -231,7 +231,7 @@ export default function AcademicTermsPage({ terms }: Props) {
     return (
         <div className="flex min-h-screen flex-1 flex-col bg-[#fafafa] p-8">
             <Head title="Academic Terms" />
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left sm:gap-0">
                 <div>
                     <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
                         Academic Terms
@@ -242,13 +242,13 @@ export default function AcademicTermsPage({ terms }: Props) {
                 </div>
                 <Button
                     onClick={() => setModal({ open: true, mode: 'create' })}
-                    className="gap-1.5 bg-indigo-900 text-white hover:bg-indigo-800"
+                    className="gap-1.5 bg-indigo-900 text-white hover:bg-indigo-800 w-full sm:w-auto"
                 >
                     <Plus className="h-4 w-4" /> Add Term
                 </Button>
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
                 <table className="min-w-full divide-y divide-slate-200 text-sm">
                     <thead className="bg-slate-50">
                         <tr>

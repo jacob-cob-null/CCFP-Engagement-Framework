@@ -148,8 +148,8 @@ export default function Dashboard({ terms = [], selectedTermId, metrics = { tota
                                 <tr>
                                     <th className="px-6 py-4">Rank</th>
                                     <th className="px-6 py-4">Employee</th>
-                                    <th className="px-6 py-4">Unit</th>
-                                    <th className="px-6 py-4">Type</th>
+                                    <th className="px-6 py-4 hidden sm:table-cell">Unit</th>
+                                    <th className="px-6 py-4 hidden md:table-cell">Type</th>
                                     <th className="px-6 py-4 text-right">Points</th>
                                 </tr>
                             </thead>
@@ -176,20 +176,20 @@ export default function Dashboard({ terms = [], selectedTermId, metrics = { tota
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <p className="font-semibold text-slate-900">{entry.employee.employee_name}</p>
-                                                    <p className="font-mono text-xs text-slate-400 mt-0.5">#{entry.employee.employee_number}</p>
+                                                    <p className="font-semibold text-slate-900">{entry.employee?.employee_name || 'Unknown Employee'}</p>
+                                                    <p className="font-mono text-xs text-slate-400 mt-0.5">#{entry.employee?.employee_number || 'N/A'}</p>
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-6 py-4 hidden sm:table-cell">
                                                     <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
                                                         <Building2 className="h-3.5 w-3.5 text-slate-400" />
-                                                        {entry.employee.unit?.unit_id || 'N/A'}
+                                                        {entry.employee?.unit?.unit_id || 'N/A'}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-6 py-4 hidden md:table-cell">
                                                     <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
-                                                        ${entry.employee.personnel_type === 'teaching' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'bg-sky-50 text-sky-700'}
+                                                        ${entry.employee?.personnel_type === 'teaching' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'bg-sky-50 text-sky-700'}
                                                     `}>
-                                                        {entry.employee.personnel_type}
+                                                        {entry.employee?.personnel_type || 'Unknown'}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">

@@ -150,11 +150,17 @@ class DashboardController extends Controller
                 return $rows->map(function ($r) {
                     $emp = $r->employee;
                     return [
-                        'employee_id' => $emp->employee_id ?? null,
-                        'employee_name' => $emp->employee_name ?? null,
-                        'unit_id' => $emp->unit_id ?? null,
-                        'unit_name' => $emp->unit->unit_name ?? null,
+                        'employee_id' => $r->employee_id,
                         'total_points' => (int) $r->total_points,
+                        'employee' => $emp ? [
+                            'employee_name' => $emp->employee_name,
+                            'employee_number' => $emp->employee_number,
+                            'personnel_type' => $emp->personnel_type,
+                            'unit' => $emp->unit ? [
+                                'unit_name' => $emp->unit->unit_name,
+                                'unit_id' => $emp->unit_id,
+                            ] : null,
+                        ] : null,
                     ];
                 })->toArray();
             });

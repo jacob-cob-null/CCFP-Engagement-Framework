@@ -7,6 +7,7 @@ use App\Services\AuditService;
 use App\Services\CacheKeys;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class AcademicTermController extends Controller
@@ -36,7 +37,12 @@ class AcademicTermController extends Controller
         $validated['is_current'] = $request->boolean('is_current');
 
         if ($validated['is_current']) {
-            AcademicTerm::query()->update(['is_current' => false]);
+            AcademicTerm::query()->update(['is_current' => DB::raw('false')]);
+        }
+
+        // Ensure Postgres receives boolean literals, not integers
+        if (isset($validated['is_current'])) {
+            $validated['is_current'] = $validated['is_current'] ? DB::raw('true') : DB::raw('false');
         }
 
         $term = AcademicTerm::create($validated);
@@ -44,7 +50,7 @@ class AcademicTermController extends Controller
         $this->invalidateCache();
 
         AuditService::log(
-            actionType:  'create_academic_term',
+            actionType:  'term_created',
             targetId:    $term->term_id,
             description: "Created academic term: {$term->academic_year} {$term->semester} semester.",
             metadata:    $validated,
@@ -69,7 +75,7 @@ class AcademicTermController extends Controller
         $validated['is_current'] = $request->boolean('is_current');
 
         if ($validated['is_current']) {
-            AcademicTerm::query()->where('term_id', '!=', $id)->update(['is_current' => false]);
+            AcademicTerm::query()->where('term_id', '!=', $id)->update(['is_current' => DB::raw('false')]);
         }
 
         $before = $term->only(['academic_year', 'semester', 'start_date', 'end_date', 'is_current']);
@@ -78,7 +84,7 @@ class AcademicTermController extends Controller
         $this->invalidateCache();
 
         AuditService::log(
-            actionType:  'update_academic_term',
+            actionType:  'term_updated',
             targetId:    $id,
             description: "Updated academic term: {$term->academic_year} {$term->semester} semester.",
             metadata:    ['before' => $before, 'after' => $validated],
@@ -104,7 +110,7 @@ class AcademicTermController extends Controller
         $this->invalidateCache();
 
         AuditService::log(
-            actionType:  'delete_academic_term',
+            actionType:  'term_deleted',
             targetId:    $id,
             description: "Deleted academic term: {$term->academic_year} {$term->semester}.",
             metadata:    ['term_id' => $id],

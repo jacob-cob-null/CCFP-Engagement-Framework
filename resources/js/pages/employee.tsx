@@ -1,4 +1,5 @@
 import { Head, router, useForm, usePage, Deferred } from '@inertiajs/react';
+import { EmployeeTableRowsSkeleton } from '@/components/skeletons/employee-skeleton';
 import { Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -61,7 +62,7 @@ type EmployeeForm = {
 
 const PERSONNEL_TYPES = [
     { value: 'teaching', label: 'Teaching' },
-    { value: 'non-teaching', label: 'Non-Teaching' },
+    { value: 'non_teaching', label: 'Non-Teaching' },
 ];
 
 function EmployeeModal({
@@ -411,8 +412,16 @@ export default function EmployeePage({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        <Deferred data="employees" fallback={<EmployeeSkeleton rows={5} columns={7} />}>
-                            {(!employees || employees.data.length === 0) ? (
+                        <Deferred
+                            data="employees"
+                            fallback={
+                                <EmployeeTableRowsSkeleton
+                                    rows={5}
+                                    columns={7}
+                                />
+                            }
+                        >
+                            {!employees || employees.data.length === 0 ? (
                                 <tr>
                                     <td
                                         colSpan={7}
@@ -437,20 +446,37 @@ export default function EmployeePage({
                                             <span
                                                 className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${emp.personnel_type === 'teaching' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}
                                             >
-                                                {emp.personnel_type}
+                                                {emp.personnel_type ===
+                                                'non_teaching'
+                                                    ? 'Non-Teaching'
+                                                    : emp.personnel_type
+                                                          .charAt(0)
+                                                          .toUpperCase() +
+                                                      emp.personnel_type.slice(
+                                                          1,
+                                                      )}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-slate-600">
                                             {emp.unit?.unit_name ?? emp.unit_id}
                                         </td>
-                                        <td className="px-4 py-3 text-right font-mono text-sm text-emerald-700">
+                                        <td className="flex justify-start px-4 py-3 text-left font-mono text-sm text-emerald-700">
                                             {(emp as any).total_points ?? 0}
                                         </td>
                                         <td className="px-4 py-3">
                                             <span
                                                 className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${emp.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}
                                             >
-                                                {emp.status}
+                                                {emp.status
+                                                    .split('-')
+                                                    .map(
+                                                        (word) =>
+                                                            word
+                                                                .charAt(0)
+                                                                .toUpperCase() +
+                                                            word.slice(1),
+                                                    )
+                                                    .join('-')}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-right">
@@ -569,19 +595,3 @@ EmployeePage.layout = {
         { title: 'Employees', href: '/employee' },
     ],
 };
-
-function EmployeeSkeleton({ rows = 5, columns = 7 }: { rows?: number; columns?: number }) {
-    return (
-        <>
-            {Array.from({ length: rows }).map((_, i) => (
-                <tr key={i} className="animate-pulse border-b border-slate-50">
-                    {Array.from({ length: columns }).map((_, j) => (
-                        <td key={j} className="px-4 py-4">
-                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-                        </td>
-                    ))}
-                </tr>
-            ))}
-        </>
-    );
-}

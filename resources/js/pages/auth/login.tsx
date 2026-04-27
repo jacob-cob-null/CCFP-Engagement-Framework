@@ -110,22 +110,6 @@ export default function Login() {
                                                         }
                                                     />
                                                 </div>
-
-                                                <div className="flex items-center space-x-3">
-                                                    <Checkbox
-                                                        id="remember"
-                                                        name="remember"
-                                                        tabIndex={3}
-                                                        className="border-slate-300"
-                                                    />
-                                                    <Label
-                                                        htmlFor="remember"
-                                                        className="font-normal text-slate-600"
-                                                    >
-                                                        Remember Me
-                                                    </Label>
-                                                </div>
-
                                                 <Button
                                                     type="submit"
                                                     className="text-md mt-4 w-full rounded-lg bg-[#293a8a] py-3 text-white shadow-md hover:bg-[#293a8a]/90"

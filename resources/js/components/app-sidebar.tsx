@@ -69,9 +69,6 @@ export function AppSidebar() {
                         >
                             <Menu className="h-[22px] w-[22px]" />
                         </button>
-                        <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-300 transition-colors hover:bg-slate-800/40 hover:text-white">
-                            <Search className="h-5 w-5" />
-                        </button>
                     </div>
                 ) : (
                     <SidebarMenu>
@@ -81,7 +78,7 @@ export function AppSidebar() {
                                 asChild
                                 className="text-white hover:bg-[#1a1c3d]"
                             >
-                                <Link href={dashboard()} prefetch>
+                                <Link href={dashboard()}>
                                     <AppLogo />
                                 </Link>
                             </SidebarMenuButton>

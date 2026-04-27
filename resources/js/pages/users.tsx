@@ -1,4 +1,5 @@
 import { Head, Link, router, useForm, usePage, Deferred } from '@inertiajs/react';
+import { UserTableRowsSkeleton } from '@/components/skeletons/users-skeleton';
 import { Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -304,7 +305,7 @@ export default function UsersPage({ users, units, filters }: Props) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        <Deferred data="users" fallback={<UserSkeleton rows={5} columns={6} />}>
+                        <Deferred data="users" fallback={<UserTableRowsSkeleton rows={5} columns={6} />}>
                             {(!users || users.data.length === 0) ? (
                                 <tr>
                                     <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
@@ -434,19 +435,3 @@ UsersPage.layout = {
         { title: 'User Management', href: '/users' },
     ],
 };
-
-function UserSkeleton({ rows = 5, columns = 6 }: { rows?: number; columns?: number }) {
-    return (
-        <>
-            {Array.from({ length: rows }).map((_, i) => (
-                <tr key={i} className="animate-pulse border-b border-slate-50">
-                    {Array.from({ length: columns }).map((_, j) => (
-                        <td key={j} className="px-4 py-4">
-                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-                        </td>
-                    ))}
-                </tr>
-            ))}
-        </>
-    );
-}

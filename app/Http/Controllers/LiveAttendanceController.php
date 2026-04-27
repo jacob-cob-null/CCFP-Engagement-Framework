@@ -116,7 +116,7 @@ class LiveAttendanceController extends Controller
         PointCalculationService::recalculateTotal($employee->employee_id, $event->term_id);
 
         AuditService::log(
-            actionType:  'create_attendance_live',
+            actionType:  'attendance_recorded',
             targetId:    $attendance->attendance_id,
             description: "Live: recorded {$employee->employee_name} at '{$event->title}' ({$validated['participation_role']}, {$pointsAwarded} pts).",
             metadata:    [

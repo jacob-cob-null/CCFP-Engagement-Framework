@@ -170,15 +170,15 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
     return (
         <div className="flex flex-col flex-1 p-8 bg-[#fafafa] min-h-screen">
             <Head title="Event Setup" />
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left sm:gap-0">
                 <div>
                     <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Event Setup</h1>
                     <p className="mt-1 text-sm text-slate-500">
                         Configure and manage engagement events.
-                        {currentTerm && <span className="ml-2 font-medium text-indigo-600">Current: {currentTerm.academic_year} {currentTerm.semester} Semester</span>}
+                        {currentTerm && <span className="ml-2 font-medium text-indigo-600 block sm:inline">Current: {currentTerm.academic_year} {currentTerm.semester} Semester</span>}
                     </p>
                 </div>
-                <Button onClick={() => setModal({ open: true, mode: 'create' })} className="bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5">
+                <Button onClick={() => setModal({ open: true, mode: 'create' })} className="bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5 w-full sm:w-auto">
                     <Plus className="h-4 w-4" /> Create Event
                 </Button>
             </div>
@@ -188,7 +188,7 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
             )}
 
             {/* Filters */}
-            <div className="mb-4 flex flex-wrap gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex flex-wrap items-center justify-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:justify-start">
                 <Input placeholder="Search events…" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && applyFilters()} className="w-48" />
                 <select value={scopeFilter} onChange={e => setScopeFilter(e.target.value)}
                     className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
@@ -207,7 +207,7 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
             </div>
 
             {/* Table */}
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
                 <table className="min-w-full divide-y divide-slate-200 text-sm">
                     <thead className="bg-slate-50">
                         <tr>

@@ -133,7 +133,7 @@ class AdminUserController extends Controller
 
             // 3. Audit log
             AuditService::log(
-                actionType:  'create_user',
+                actionType:  'user_created',
                 targetId:    $userId,
                 description: "Created user account for {$validated['email']} with role {$validated['role']}.",
                 metadata:    ['email' => $validated['email'], 'role' => $validated['role'], 'unit_id' => $validated['unit_id'] ?? null],
@@ -173,7 +173,7 @@ class AdminUserController extends Controller
         ]);
 
         AuditService::log(
-            actionType:  'update_user',
+            actionType:  'profile_updated',
             targetId:    $id,
             description: "Updated user profile for {$user->user_email}.",
             metadata:    ['before' => $oldData, 'after' => $validated],
@@ -202,7 +202,7 @@ class AdminUserController extends Controller
         $user->update(['deleted_at' => now()]);
 
         AuditService::log(
-            actionType:  'delete_user',
+            actionType:  'user_deleted',
             targetId:    $id,
             description: "Soft-deleted user profile for {$user->user_email}.",
             metadata:    ['email' => $user->user_email, 'role' => $user->role],

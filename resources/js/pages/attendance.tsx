@@ -1,6 +1,7 @@
 import { Head, router, useForm, usePage, Deferred } from '@inertiajs/react';
+import { AttendanceTableRowsSkeleton } from '@/components/skeletons/attendance-skeleton';
 import { CalendarDays, Pencil, Plus, Trash2, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,99 +35,7 @@ const ROLES: { value: ParticipationRole; label: string }[] = [
     { value: 'donor', label: 'Donor' },
 ];
 
-function RecordModal({
-    eventId,
-    onClose,
-}: {
-    eventId: string;
-    onClose: () => void;
-}) {
-    const { data, setData, post, processing, errors, reset } = useForm({
-        event_id: eventId,
-        search_query: '',
-        participation_role: 'participant' as ParticipationRole,
-    });
-
-    function submit(e: React.FormEvent) {
-        e.preventDefault();
-        post('/attendance', {
-            onSuccess: () => {
-                reset();
-                onClose();
-            },
-        });
-    }
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-                <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold">Record Attendance</h2>
-                    <button onClick={onClose}>
-                        <X className="h-5 w-5 text-slate-400" />
-                    </button>
-                </div>
-                <form onSubmit={submit} className="space-y-4">
-                    <div className="grid gap-1.5">
-                        <Label htmlFor="sq">Employee Name or Number</Label>
-                        <Input
-                            id="sq"
-                            value={data.search_query}
-                            onChange={(e) =>
-                                setData('search_query', e.target.value)
-                            }
-                            placeholder="Juan dela Cruz or 12345"
-                            required
-                            autoFocus
-                        />
-                        {errors.search_query && (
-                            <p className="text-xs text-red-500">
-                                {errors.search_query}
-                            </p>
-                        )}
-                    </div>
-                    <div className="grid gap-1.5">
-                        <Label htmlFor="arole">Participation Role</Label>
-                        <select
-                            id="arole"
-                            value={data.participation_role}
-                            onChange={(e) =>
-                                setData(
-                                    'participation_role',
-                                    e.target.value as ParticipationRole,
-                                )
-                            }
-                            className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                        >
-                            {ROLES.map((r) => (
-                                <option key={r.value} value={r.value}>
-                                    {r.label}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex justify-end gap-2 pt-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={onClose}
-                            disabled={processing}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={processing}
-                            className="bg-indigo-900 text-white hover:bg-indigo-800"
-                        >
-                            {processing ? 'Recording…' : 'Record'}
-                        </Button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-}
+import { RecordAttendancePanel } from '@/components/record-attendance';
 
 function OverrideModal({
     record,
@@ -149,7 +58,7 @@ function OverrideModal({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
             <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
                 <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-lg font-semibold">Override Record</h2>
@@ -269,6 +178,12 @@ export default function AttendancePage({
     const [deleteTarget, setDeleteTarget] = useState<AttendanceRecord | null>(
         null,
     );
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [selectedEvent?.event_id]);
 
     function selectEvent(eventId: string) {
         router.get(
@@ -291,8 +206,14 @@ export default function AttendancePage({
         0,
     );
 
+    const totalPages = Math.ceil((attendanceRecords || []).length / ITEMS_PER_PAGE);
+    const paginatedRecords = (attendanceRecords || []).slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
     return (
-        <div className="flex min-h-screen flex-1 flex-col bg-[#fafafa] p-8">
+        <div className="flex min-h-screen flex-1 flex-col bg-[#fafafa] p-4 sm:p-8">
             <Head title="Attendance" />
             <div className="mb-6">
                 <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
@@ -334,7 +255,7 @@ export default function AttendancePage({
                                     </p>
                                     <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
                                         <CalendarDays className="h-3 w-3" />{' '}
-                                        {event.event_date} ·{' '}
+                                        {new Date(event.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} ·{' '}
                                         <span className="capitalize">
                                             {event.scope}
                                         </span>
@@ -353,13 +274,13 @@ export default function AttendancePage({
                         </div>
                     ) : (
                         <>
-                            <div className="mb-3 flex items-center justify-between">
+                            <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center sm:gap-0">
                                 <div>
                                     <h2 className="font-bold text-slate-900">
                                         {selectedEvent.title}
                                     </h2>
                                     <p className="text-xs text-slate-500">
-                                        {selectedEvent.event_date} ·{' '}
+                                        {new Date(selectedEvent.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} ·{' '}
                                         {attendanceRecords?.length ?? 0} records ·{' '}
                                         {totalPoints} total pts
                                     </p>
@@ -370,13 +291,13 @@ export default function AttendancePage({
                                 </div>
                                 <Button
                                     onClick={() => setShowRecord(true)}
-                                    className="gap-1.5 bg-indigo-900 text-white hover:bg-indigo-800"
+                                    className="w-full gap-1.5 bg-indigo-900 text-white hover:bg-indigo-800 sm:w-auto"
                                 >
                                     <Plus className="h-4 w-4" /> Record
                                 </Button>
                             </div>
 
-                            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
                                 {recentRecords.length > 0 && (
                                     <div className="border-b border-slate-100 px-4 py-2 text-xs text-slate-500">
                                         Recent records:{' '}
@@ -409,8 +330,8 @@ export default function AttendancePage({
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        <Deferred data="attendanceRecords" fallback={<AttendanceSkeleton rows={5} />}>
-                                            {(!attendanceRecords || attendanceRecords.length === 0) ? (
+                                        <Deferred data="attendanceRecords" fallback={<AttendanceTableRowsSkeleton rows={5} />}>
+                                            {paginatedRecords.length === 0 ? (
                                                 <tr>
                                                     <td
                                                         colSpan={5}
@@ -420,7 +341,7 @@ export default function AttendancePage({
                                                     </td>
                                                 </tr>
                                             ) : (
-                                                attendanceRecords.map((rec) => (
+                                                paginatedRecords.map((rec) => (
                                                     <tr
                                                         key={rec.attendance_id}
                                                         className="transition-colors hover:bg-slate-50"
@@ -459,7 +380,7 @@ export default function AttendancePage({
                                                         <td className="px-4 py-3 text-xs text-slate-400">
                                                             {new Date(
                                                                 rec.recorded_at,
-                                                            ).toLocaleString()}
+                                                            ).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                                                         </td>
                                                         <td className="px-4 py-3 text-right">
                                                             <div className="flex justify-end gap-1">
@@ -495,6 +416,33 @@ export default function AttendancePage({
                                         </Deferred>
                                     </tbody>
                                 </table>
+                                {attendanceRecords && attendanceRecords.length > 0 && (
+                                    <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:gap-0">
+                                        <span className="text-center text-xs text-slate-500 sm:text-left">
+                                            Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, attendanceRecords.length)} to {Math.min(currentPage * ITEMS_PER_PAGE, attendanceRecords.length)} of {attendanceRecords.length} entries
+                                        </span>
+                                        <div className="flex gap-2">
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                disabled={currentPage === 1}
+                                                onClick={() => setCurrentPage(p => p - 1)}
+                                                className="h-8 text-xs"
+                                            >
+                                                Previous
+                                            </Button>
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                disabled={currentPage === totalPages || totalPages === 0}
+                                                onClick={() => setCurrentPage(p => p + 1)}
+                                                className="h-8 text-xs"
+                                            >
+                                                Next
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </>
                     )}
@@ -502,8 +450,8 @@ export default function AttendancePage({
             </div>
 
             {showRecord && selectedEvent && (
-                <RecordModal
-                    eventId={selectedEvent.event_id}
+                <RecordAttendancePanel
+                    event={selectedEvent}
                     onClose={() => setShowRecord(false)}
                 />
             )}
@@ -515,7 +463,7 @@ export default function AttendancePage({
             )}
 
             {deleteTarget && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                     <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
                         <h2 className="mb-2 text-lg font-semibold">
                             Remove Record?
@@ -555,32 +503,4 @@ AttendancePage.layout = {
     ],
 };
 
-function AttendanceSkeleton({ rows = 5 }: { rows?: number }) {
-    return (
-        <>
-            {Array.from({ length: rows }).map((_, i) => (
-                <tr key={i} className="animate-pulse border-b border-slate-50">
-                    <td className="px-4 py-4">
-                        <div className="h-4 bg-slate-200 rounded w-3/4 mb-1.5"></div>
-                        <div className="h-3 bg-slate-200 rounded w-1/4"></div>
-                    </td>
-                    <td className="px-4 py-4">
-                        <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                    </td>
-                    <td className="px-4 py-4">
-                        <div className="h-5 bg-slate-200 rounded-full w-16"></div>
-                    </td>
-                    <td className="px-4 py-4">
-                        <div className="h-3 bg-slate-200 rounded w-24"></div>
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                        <div className="flex justify-end gap-1">
-                            <div className="w-8 h-8 bg-slate-200 rounded"></div>
-                            <div className="w-8 h-8 bg-slate-200 rounded"></div>
-                        </div>
-                    </td>
-                </tr>
-            ))}
-        </>
-    );
-}
+

@@ -1,4 +1,5 @@
 import { Head, router, Deferred } from '@inertiajs/react';
+import { MetricCardSkeleton, BreakdownSkeleton, LeaderboardSkeleton } from '@/components/skeletons/dashboard-skeleton';
 import { dashboard } from '@/routes';
 import { Users, CalendarDays, ClipboardCheck, Trophy, Target, GraduationCap, Building2 } from 'lucide-react';
 import type { AcademicTerm, Employee, OrganizationalUnit } from '@/types';
@@ -147,8 +148,8 @@ export default function Dashboard({ terms = [], selectedTermId, metrics = { tota
                                 <tr>
                                     <th className="px-6 py-4">Rank</th>
                                     <th className="px-6 py-4">Employee</th>
-                                    <th className="px-6 py-4">Unit</th>
-                                    <th className="px-6 py-4">Type</th>
+                                    <th className="px-6 py-4 hidden sm:table-cell">Unit</th>
+                                    <th className="px-6 py-4 hidden md:table-cell">Type</th>
                                     <th className="px-6 py-4 text-right">Points</th>
                                 </tr>
                             </thead>
@@ -175,20 +176,20 @@ export default function Dashboard({ terms = [], selectedTermId, metrics = { tota
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <p className="font-semibold text-slate-900">{entry.employee.employee_name}</p>
-                                                    <p className="font-mono text-xs text-slate-400 mt-0.5">#{entry.employee.employee_number}</p>
+                                                    <p className="font-semibold text-slate-900">{entry.employee?.employee_name || 'Unknown Employee'}</p>
+                                                    <p className="font-mono text-xs text-slate-400 mt-0.5">#{entry.employee?.employee_number || 'N/A'}</p>
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-6 py-4 hidden sm:table-cell">
                                                     <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
                                                         <Building2 className="h-3.5 w-3.5 text-slate-400" />
-                                                        {entry.employee.unit?.unit_id || 'N/A'}
+                                                        {entry.employee?.unit?.unit_id || 'N/A'}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-6 py-4 hidden md:table-cell">
                                                     <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
-                                                        ${entry.employee.personnel_type === 'teaching' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'bg-sky-50 text-sky-700'}
+                                                        ${entry.employee?.personnel_type === 'teaching' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'bg-sky-50 text-sky-700'}
                                                     `}>
-                                                        {entry.employee.personnel_type}
+                                                        {entry.employee?.personnel_type || 'Unknown'}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
@@ -273,59 +274,4 @@ function ProgressBar({ label, count, percentage, colorClass }: { label: string, 
     );
 }
 
-function MetricCardSkeleton() {
-    return (
-        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 flex flex-col relative overflow-hidden animate-pulse">
-            <div className="flex items-start justify-between relative z-10 w-full">
-                <div className="space-y-4 w-full">
-                    <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                    <div className="h-8 bg-slate-200 rounded w-1/3 mt-2"></div>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-200 w-12 h-12 flex-shrink-0"></div>
-            </div>
-        </div>
-    );
-}
 
-function BreakdownSkeleton({ rows = 2 }: { rows: number }) {
-    return (
-        <div className="space-y-5">
-            {Array.from({ length: rows }).map((_, i) => (
-                <div key={i} className="animate-pulse">
-                    <div className="flex justify-between items-end mb-2">
-                        <div className="h-3 bg-slate-200 rounded w-1/3"></div>
-                        <div className="h-3 bg-slate-200 rounded w-1/4"></div>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2.5"></div>
-                </div>
-            ))}
-        </div>
-    );
-}
-
-function LeaderboardSkeleton({ rows = 5 }: { rows: number }) {
-    return (
-        <>
-            {Array.from({ length: rows }).map((_, i) => (
-                <tr key={i} className="animate-pulse border-b border-slate-50">
-                    <td className="px-6 py-4">
-                        <div className="w-8 h-8 bg-slate-200 rounded-full"></div>
-                    </td>
-                    <td className="px-6 py-4">
-                        <div className="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
-                        <div className="h-3 bg-slate-200 rounded w-1/2"></div>
-                    </td>
-                    <td className="px-6 py-4">
-                        <div className="h-4 bg-slate-200 rounded w-16"></div>
-                    </td>
-                    <td className="px-6 py-4">
-                        <div className="h-5 bg-slate-200 rounded-full w-20"></div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                        <div className="h-6 bg-slate-200 rounded w-16 ml-auto"></div>
-                    </td>
-                </tr>
-            ))}
-        </>
-    );
-}

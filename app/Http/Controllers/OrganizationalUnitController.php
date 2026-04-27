@@ -81,7 +81,7 @@ class OrganizationalUnitController extends Controller
         $this->invalidateCache();
 
         AuditService::log(
-            actionType:  'create_org_unit',
+            actionType:  'org_unit_created',
             targetId:    $unit->unit_id,
             description: "Created organizational unit: {$unit->unit_name} ({$unit->unit_type}).",
             metadata:    $validated,
@@ -106,7 +106,7 @@ class OrganizationalUnitController extends Controller
         $this->invalidateCache();
 
         AuditService::log(
-            actionType:  'update_org_unit',
+            actionType:  'org_unit_updated',
             targetId:    $id,
             description: "Updated organizational unit: {$unit->unit_name}.",
             metadata:    ['before' => $before, 'after' => $validated],
@@ -130,7 +130,7 @@ class OrganizationalUnitController extends Controller
         $this->invalidateCache();
 
         AuditService::log(
-            actionType:  'delete_org_unit',
+            actionType:  'org_unit_deleted',
             targetId:    $id,
             description: "Soft-deleted organizational unit: {$unit->unit_name}.",
             metadata:    ['unit_name' => $unit->unit_name, 'unit_type' => $unit->unit_type],

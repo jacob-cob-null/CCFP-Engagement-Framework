@@ -26,7 +26,7 @@ class ExportController extends Controller
         $employees = $query->orderBy('employee_name')->get();
 
         AuditService::log(
-            actionType: 'export_employees',
+            actionType: 'data_export',
             targetId: null,
             description: "Exported current active employees list to CSV.",
             metadata: ['count' => $employees->count()],
@@ -74,7 +74,7 @@ class ExportController extends Controller
         $records = $query->orderBy('recorded_at', 'desc')->get();
 
         AuditService::log(
-            actionType: 'export_attendance',
+            actionType: 'data_export',
             targetId: $termId,
             description: "Exported attendance records for {$term->academic_year} {$term->semester} to CSV.",
             metadata: ['count' => $records->count()],
@@ -125,7 +125,7 @@ class ExportController extends Controller
         $records = $query->orderByDesc('total_points')->get();
 
         AuditService::log(
-            actionType: 'export_points',
+            actionType: 'data_export',
             targetId: $termId,
             description: "Exported point totals for {$term->academic_year} {$term->semester} to CSV.",
             metadata: ['count' => $records->count()],

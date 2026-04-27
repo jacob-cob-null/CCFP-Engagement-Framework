@@ -45,6 +45,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('attendance', [AttendanceController::class, 'store'])->name('attendance.store');
     Route::patch('attendance/{id}', [AttendanceController::class, 'update'])->name('attendance.update');
     Route::delete('attendance/{id}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
+    
+    Route::get('api/attendance/employees', [AttendanceController::class, 'getEmployees'])->name('api.attendance.employees');
+    Route::post('api/attendance/record', [AttendanceController::class, 'recordAttendance'])->name('api.attendance.record');
 
     // ── Live / Mobile Attendance ─────────────────────────────────────────────
     Route::get('attendance/live', [LiveAttendanceController::class, 'index'])->name('attendance.live');

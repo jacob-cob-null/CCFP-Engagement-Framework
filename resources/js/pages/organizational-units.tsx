@@ -1,4 +1,5 @@
 import { Head, router, useForm, Deferred } from '@inertiajs/react';
+import { UnitTableRowsSkeleton } from '@/components/skeletons/organizational-units-skeleton';
 import { Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -93,17 +94,17 @@ export default function OrganizationalUnitsPage({ units, filters }: Props) {
     return (
         <div className="flex flex-col flex-1 p-8 bg-[#fafafa] min-h-screen">
             <Head title="Organizational Units" />
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left sm:gap-0">
                 <div>
                     <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Organizational Units</h1>
                     <p className="mt-1 text-sm text-slate-500">Manage colleges and organizations tracked in the system.</p>
                 </div>
-                <Button onClick={() => setModal({ open: true, mode: 'create' })} className="bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5">
+                <Button onClick={() => setModal({ open: true, mode: 'create' })} className="bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5 w-full sm:w-auto">
                     <Plus className="h-4 w-4" /> Add Unit
                 </Button>
             </div>
 
-            <div className="mb-4 flex gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex flex-wrap items-center justify-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:justify-start">
                 <Input placeholder="Search by name…" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && applyFilters()} className="w-56" />
                 <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
                     className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
@@ -114,7 +115,7 @@ export default function OrganizationalUnitsPage({ units, filters }: Props) {
                 {(search || typeFilter) && <Button variant="ghost" onClick={() => { setSearch(''); setTypeFilter(''); router.get('/organizational-units'); }} className="text-slate-500">Clear</Button>}
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
                 <table className="min-w-full divide-y divide-slate-200 text-sm">
                     <thead className="bg-slate-50">
                         <tr>
@@ -125,7 +126,7 @@ export default function OrganizationalUnitsPage({ units, filters }: Props) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        <Deferred data="units" fallback={<UnitSkeleton rows={5} columns={4} />}>
+                        <Deferred data="units" fallback={<UnitTableRowsSkeleton rows={5} columns={4} />}>
                             {(!units || units.data.length === 0) ? (
                                 <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">No units found.</td></tr>
                             ) : units.data.map(unit => (
@@ -133,7 +134,7 @@ export default function OrganizationalUnitsPage({ units, filters }: Props) {
                                     <td className="px-4 py-3 font-mono text-xs text-slate-700">{unit.unit_id}</td>
                                     <td className="px-4 py-3 font-medium text-slate-900">{unit.unit_name}</td>
                                     <td className="px-4 py-3">
-                                        <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${unit.unit_type === 'college' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                                        <span className={`inline-flex items-center capitalize rounded px-2 py-0.5 text-xs font-medium ${unit.unit_type === 'college' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
                                             {unit.unit_type}
                                         </span>
                                     </td>
@@ -175,18 +176,4 @@ OrganizationalUnitsPage.layout = {
     ],
 };
 
-function UnitSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
-    return (
-        <>
-            {Array.from({ length: rows }).map((_, i) => (
-                <tr key={i} className="animate-pulse border-b border-slate-50">
-                    {Array.from({ length: columns }).map((_, j) => (
-                        <td key={j} className="px-4 py-4">
-                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-                        </td>
-                    ))}
-                </tr>
-            ))}
-        </>
-    );
-}
+

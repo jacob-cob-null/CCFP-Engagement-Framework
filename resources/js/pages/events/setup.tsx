@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { AcademicTerm, Event, EventScope, OrganizationalUnit, Paginated } from '@/types';
+import type { AcademicTerm, Event, EventScope, OrganizationalUnit, Paginated, ParticipationRole } from '@/types';
 
 type Props = {
     events?: Paginated<Event>;

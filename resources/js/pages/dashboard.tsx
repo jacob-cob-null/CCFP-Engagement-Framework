@@ -1,7 +1,8 @@
 import { Head, router, Deferred } from '@inertiajs/react';
 import { MetricCardSkeleton, BreakdownSkeleton, LeaderboardSkeleton } from '@/components/skeletons/dashboard-skeleton';
 import { dashboard } from '@/routes';
-import { Users, CalendarDays, ClipboardCheck, Trophy, Target, GraduationCap, Building2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, CalendarDays, ClipboardCheck, Trophy, Target, GraduationCap, Building2, Download } from 'lucide-react';
 import type { AcademicTerm, Employee, OrganizationalUnit } from '@/types';
 
 type Metrics = {
@@ -58,21 +59,31 @@ export default function Dashboard({ terms = [], selectedTermId, metrics = { tota
                     <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Dashboard</h1>
                     <p className="text-slate-500 mt-2">Overview of engagement metrics and top performers.</p>
                 </div>
-                <div className="flex items-center gap-2 bg-white rounded-lg shadow-sm border border-slate-200 p-1.5">
-                    <label htmlFor="term-filter" className="text-sm text-slate-500 font-medium pl-2">Term:</label>
-                    <select
-                        id="term-filter"
-                        value={selectedTermId || ''}
-                        onChange={(e) => changeTerm(e.target.value)}
-                        className="bg-slate-50 border-none outline-none text-sm font-semibold text-slate-700 py-1.5 px-3 rounded-md cursor-pointer hover:bg-slate-100 transition-colors"
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                    <div className="flex items-center gap-2 bg-white rounded-lg shadow-sm border border-slate-200 p-1 w-full sm:w-auto h-11">
+                        <label htmlFor="term-filter" className="text-sm text-slate-500 font-medium pl-2 whitespace-nowrap">Term:</label>
+                        <select
+                            id="term-filter"
+                            value={selectedTermId || ''}
+                            onChange={(e) => changeTerm(e.target.value)}
+                            className="bg-slate-50 border-none outline-none text-sm font-semibold text-slate-700 py-1.5 px-3 rounded-md cursor-pointer hover:bg-slate-100 transition-colors h-full"
+                        >
+                            <option value="">All Terms</option>
+                            {terms.map((t) => (
+                                <option key={t.term_id} value={t.term_id}>
+                                    {t.academic_year} - {t.semester} {t.is_current ? '(Current)' : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <Button 
+                        variant="outline" 
+                        className="h-11 shadow-sm border-slate-200 text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-2 group w-full sm:w-auto px-4"
+                        onClick={() => window.location.href = `/export/dashboard?term_id=${selectedTermId || ''}`}
                     >
-                        <option value="">All Terms</option>
-                        {terms.map((t) => (
-                            <option key={t.term_id} value={t.term_id}>
-                                {t.academic_year} - {t.semester} {t.is_current ? '(Current)' : ''}
-                            </option>
-                        ))}
-                    </select>
+                        <Download className="h-4 w-4 group-hover:translate-y-0.5 transition-transform" />
+                        <span className="font-semibold">Export CSV</span>
+                    </Button>
                 </div>
             </div>
 

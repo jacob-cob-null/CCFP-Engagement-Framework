@@ -1,6 +1,6 @@
 import { Head, router, useForm, usePage, Deferred } from '@inertiajs/react';
 import { EmployeeTableRowsSkeleton } from '@/components/skeletons/employee-skeleton';
-import { Pencil, Plus, Trash2, X, MoreHorizontal } from 'lucide-react';
+import { Pencil, Plus, Trash2, X, MoreHorizontal, Download } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -311,12 +311,22 @@ export default function EmployeePage({
                         {employees?.total ?? 0}
                     </p>
                 </div>
-                <Button
-                    onClick={() => setModal({ open: true, mode: 'create' })}
-                    className="w-full sm:w-auto gap-1.5 bg-indigo-900 text-white hover:bg-indigo-800"
-                >
-                    <Plus className="h-4 w-4" /> Add Employee
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <Button 
+                        variant="outline" 
+                        className="flex items-center justify-center gap-2 border-slate-200"
+                        onClick={() => window.location.href = '/export/employees'}
+                    >
+                        <Download className="h-4 w-4" />
+                        <span>Export CSV</span>
+                    </Button>
+                    <Button
+                        onClick={() => setModal({ open: true, mode: 'create' })}
+                        className="w-full sm:w-auto gap-1.5 bg-indigo-900 text-white hover:bg-indigo-800"
+                    >
+                        <Plus className="h-4 w-4" /> Add Employee
+                    </Button>
+                </div>
             </div>
 
             {flash?.success && (

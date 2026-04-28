@@ -1,6 +1,6 @@
 import { Head, router, usePage, Deferred } from '@inertiajs/react';
 import { AuditTableRowsSkeleton } from '@/components/skeletons/audit-logs-skeleton';
-import { Search, Eye } from 'lucide-react';
+import { Search, Eye, Download } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,9 +24,19 @@ export default function AuditLogsPage({ logs, actionTypes, filters }: Props) {
     return (
         <div className="flex flex-col flex-1 p-4 sm:p-8 bg-[#fafafa] min-h-screen">
             <Head title="Audit Logs" />
-            <div className="mb-6">
-                <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Audit Trail</h1>
-                <p className="mt-1 text-sm text-slate-500">Read-only event stream of all administrative actions securely logged by the system.</p>
+            <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Audit Trail</h1>
+                    <p className="mt-1 text-sm text-slate-500">Read-only event stream of all administrative actions securely logged by the system.</p>
+                </div>
+                <Button 
+                    variant="outline" 
+                    className="flex items-center justify-center gap-2 border-slate-200 w-full sm:w-auto"
+                    onClick={() => window.location.href = '/export/audit-logs'}
+                >
+                    <Download className="h-4 w-4" />
+                    <span>Export CSV</span>
+                </Button>
             </div>
 
             {/* Filters */}

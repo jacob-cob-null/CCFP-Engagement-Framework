@@ -1,5 +1,5 @@
 import { Head, router, useForm, usePage, Deferred } from '@inertiajs/react';
-import { Pencil, Plus, Trash2, X, ClipboardList, MoreHorizontal } from 'lucide-react';
+import { Pencil, Plus, Trash2, X, ClipboardList, MoreHorizontal, Download } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -253,9 +253,19 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
                         {currentTerm && <span className="ml-2 font-medium text-indigo-600 block sm:inline">Current: {currentTerm.academic_year} {currentTerm.semester} Semester</span>}
                     </p>
                 </div>
-                <Button onClick={() => setModal({ open: true, mode: 'create' })} className="bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5 w-full sm:w-auto">
-                    <Plus className="h-4 w-4" /> Create Event
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <Button 
+                        variant="outline" 
+                        className="flex items-center justify-center gap-2 border-slate-200"
+                        onClick={() => window.location.href = '/export/events'}
+                    >
+                        <Download className="h-4 w-4" />
+                        <span>Export CSV</span>
+                    </Button>
+                    <Button onClick={() => setModal({ open: true, mode: 'create' })} className="bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5 w-full sm:w-auto">
+                        <Plus className="h-4 w-4" /> Create Event
+                    </Button>
+                </div>
             </div>
 
             {flash?.success && (

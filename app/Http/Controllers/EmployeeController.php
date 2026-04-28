@@ -124,6 +124,10 @@ class EmployeeController extends Controller
             'status'          => 'sometimes|in:active,inactive',
         ]);
 
+        if (Auth::user()->role !== 'ccfp_admin') {
+            $validated['unit_id'] = Auth::user()->unit_id;
+        }
+
         $validated['employee_id'] = (string) Str::uuid();
         $validated['status'] = $validated['status'] ?? 'active';
 
@@ -151,6 +155,10 @@ class EmployeeController extends Controller
             'unit_id'         => 'required|exists:organizational_units,unit_id',
             'status'          => 'required|in:active,inactive',
         ]);
+
+        if (Auth::user()->role !== 'ccfp_admin') {
+            $validated['unit_id'] = Auth::user()->unit_id;
+        }
 
         $before = $employee->only(['employee_name', 'employee_number', 'personnel_type', 'unit_id', 'status']);
         $employee->update($validated);

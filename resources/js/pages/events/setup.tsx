@@ -1,5 +1,5 @@
 import { Head, router, useForm, usePage, Deferred } from '@inertiajs/react';
-import { Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Pencil, Plus, Trash2, X, ClipboardList } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -226,7 +226,12 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
                             ) : events.data.map(event => (
                                 <tr key={event.event_id} className="hover:bg-slate-50 transition-colors">
                                     <td className="px-4 py-3 font-medium text-slate-900">
-                                        {event.title}
+                                        <button 
+                                            onClick={() => router.get('/attendance', { event_id: event.event_id })}
+                                            className="text-left hover:text-indigo-600 hover:underline transition-colors block"
+                                        >
+                                            {event.title}
+                                        </button>
                                         {event.activity_program && <p className="text-xs text-slate-400">{event.activity_program}</p>}
                                     </td>
                                     <td className="px-4 py-3">
@@ -243,8 +248,9 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <div className="flex justify-end gap-1">
-                                            <Button size="icon" variant="ghost" onClick={() => setModal({ open: true, mode: 'edit', event })}><Pencil className="h-4 w-4 text-slate-500" /></Button>
-                                            <Button size="icon" variant="ghost" onClick={() => setDeleteTarget(event)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
+                                            <Button size="icon" variant="ghost" title="View Attendance" onClick={() => router.get('/attendance', { event_id: event.event_id })}><ClipboardList className="h-4 w-4 text-indigo-600" /></Button>
+                                            <Button size="icon" variant="ghost" title="Edit Event" onClick={() => setModal({ open: true, mode: 'edit', event })}><Pencil className="h-4 w-4 text-slate-500" /></Button>
+                                            <Button size="icon" variant="ghost" title="Archive Event" onClick={() => setDeleteTarget(event)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
                                         </div>
                                     </td>
                                 </tr>

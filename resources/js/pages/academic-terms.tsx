@@ -205,7 +205,7 @@ export default function AcademicTermsPage({ terms }: Props) {
     const formatDate = (d?: string) => {
         if (!d) return '—';
         try {
-            return new Date(d).toLocaleDateString(undefined, {
+            return new Date(d).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',

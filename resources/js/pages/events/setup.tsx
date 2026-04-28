@@ -317,7 +317,9 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
                                             {event.scope}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 text-slate-600">{event.event_date as string}</td>
+                                    <td className="px-4 py-3 text-slate-600">
+                                        {new Date(event.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                    </td>
                                     <td className="px-4 py-3 text-slate-600">
                                         {event.term ? `${event.term.academic_year} ${event.term.semester}` : event.term_id}
                                     </td>

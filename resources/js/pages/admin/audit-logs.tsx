@@ -70,7 +70,9 @@ export default function AuditLogsPage({ logs, actionTypes, filters }: Props) {
                                 <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400 font-sans text-sm">No activity logs found.</td></tr>
                             ) : logs.data.map(log => (
                                 <tr key={log.log_id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="px-4 py-3 text-slate-500">{new Date(log.created_at).toLocaleString()}</td>
+                                    <td className="px-4 py-3 text-slate-500">
+                                        {new Date(log.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                    </td>
                                     <td className="px-4 py-3 font-medium text-slate-700">{log.user?.user_name || log.user_id}</td>
                                     <td className="px-4 py-3"><span className="text-indigo-700 bg-indigo-50/50 px-2 py-0.5 rounded">{log.action_type}</span></td>
                                     <td className="px-4 py-3 text-slate-600 max-w-sm"><div className="truncate" title={log.description}>{log.description}</div></td>

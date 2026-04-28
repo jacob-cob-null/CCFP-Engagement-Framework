@@ -169,7 +169,7 @@ export default function SemesterArchivePage({ terms }: Props) {
                                         <td className="px-4 py-3 text-xs text-slate-500">
                                             {new Date(
                                                 term.start_date,
-                                            ).toLocaleDateString(undefined, {
+                                            ).toLocaleDateString('en-US', {
                                                 year: 'numeric',
                                                 month: 'long',
                                                 day: 'numeric',
@@ -177,7 +177,7 @@ export default function SemesterArchivePage({ terms }: Props) {
                                             →{' '}
                                             {new Date(
                                                 term.end_date,
-                                            ).toLocaleDateString(undefined, {
+                                            ).toLocaleDateString('en-US', {
                                                 year: 'numeric',
                                                 month: 'long',
                                                 day: 'numeric',

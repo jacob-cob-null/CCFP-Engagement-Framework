@@ -27,6 +27,7 @@ type EventFormData = {
     term_id: string;
     unit_id: string;
     event_date: string;
+    point_overrides: { participation_role: ParticipationRole; points_awarded: number }[];
 };
 
 function EventModal({ mode, event, terms, units, userRole, userUnitId, onClose }: {
@@ -48,6 +49,10 @@ function EventModal({ mode, event, terms, units, userRole, userUnitId, onClose }
         term_id:          event?.term_id          ?? '',
         unit_id:          event?.unit_id          ?? (isAdmin ? '' : (userUnitId ?? '')),
         event_date:       event?.event_date       ?? '',
+        point_overrides:  event?.point_overrides?.map(o => ({
+            participation_role: o.participation_role,
+            points_awarded: o.points_awarded
+        })) ?? [],
     });
 
     // Non-admins can't pick university scope
@@ -55,12 +60,32 @@ function EventModal({ mode, event, terms, units, userRole, userUnitId, onClose }
 
     function submit(e: React.FormEvent) {
         e.preventDefault();
+        const options = { onSuccess: () => { reset(); onClose(); } };
         if (mode === 'create') {
-            post('/events', { onSuccess: () => { reset(); onClose(); } });
+            post('/events', options);
         } else {
-            patch(`/events/${event!.event_id}`, { onSuccess: () => onClose() });
+            patch(`/events/${event!.event_id}`, options);
         }
     }
+
+    const addOverride = () => {
+        const remainingRoles = (['participant', 'organizer', 'donor'] as ParticipationRole[]).filter(
+            r => !data.point_overrides.some(o => o.participation_role === r)
+        );
+        if (remainingRoles.length > 0) {
+            setData('point_overrides', [...data.point_overrides, { participation_role: remainingRoles[0], points_awarded: 0 }]);
+        }
+    };
+
+    const removeOverride = (index: number) => {
+        setData('point_overrides', data.point_overrides.filter((_, i) => i !== index));
+    };
+
+    const updateOverride = (index: number, field: string, value: any) => {
+        const newOverrides = [...data.point_overrides];
+        newOverrides[index] = { ...newOverrides[index], [field]: value };
+        setData('point_overrides', newOverrides);
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -126,6 +151,50 @@ function EventModal({ mode, event, terms, units, userRole, userUnitId, onClose }
                         <textarea id="edesc" value={data.description} onChange={e => setData('description', e.target.value)}
                             className="min-h-[80px] w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                             placeholder="Optional description…" />
+                    </div>
+
+                    <div className="space-y-3 pt-2">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-sm font-bold text-slate-700">Point Overrides (Optional)</Label>
+                            {data.point_overrides.length < 3 && (
+                                <button type="button" onClick={addOverride} className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                    <Plus className="h-3 w-3" /> Add Override
+                                </button>
+                            )}
+                        </div>
+                        {data.point_overrides.length === 0 ? (
+                            <p className="text-xs text-slate-400 italic">No custom points defined. Using global policies.</p>
+                        ) : (
+                            <div className="space-y-2">
+                                {data.point_overrides.map((override, i) => (
+                                    <div key={i} className="flex items-center gap-2 p-2 rounded-md bg-slate-50 border border-slate-100">
+                                        <select 
+                                            value={override.participation_role} 
+                                            onChange={e => updateOverride(i, 'participation_role', e.target.value)}
+                                            className="h-8 flex-1 rounded border border-slate-200 bg-white px-2 text-xs outline-none focus:ring-1 focus:ring-indigo-500"
+                                        >
+                                            {(['participant', 'organizer', 'donor'] as ParticipationRole[]).map(r => (
+                                                <option key={r} value={r} disabled={data.point_overrides.some((o, idx) => o.participation_role === r && idx !== i)}>
+                                                    {r.charAt(0).toUpperCase() + r.slice(1)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <Input 
+                                            type="number" 
+                                            min={0} 
+                                            value={override.points_awarded} 
+                                            onChange={e => updateOverride(i, 'points_awarded', parseInt(e.target.value) || 0)}
+                                            className="h-8 w-20 px-2 text-xs" 
+                                        />
+                                        <span className="text-[10px] text-slate-400 font-medium">PTS</span>
+                                        <button type="button" onClick={() => removeOverride(i)} className="text-slate-400 hover:text-red-500">
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {errors.point_overrides && <p className="text-xs text-red-500">{errors.point_overrides}</p>}
                     </div>
                     <div className="flex justify-end gap-2 pt-2">
                         <Button type="button" variant="outline" onClick={onClose} disabled={processing}>Cancel</Button>
@@ -233,6 +302,15 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
                                             {event.title}
                                         </button>
                                         {event.activity_program && <p className="text-xs text-slate-400">{event.activity_program}</p>}
+                                        {event.point_overrides && event.point_overrides.length > 0 && (
+                                            <div className="mt-1 flex flex-wrap gap-1">
+                                                {event.point_overrides.map(o => (
+                                                    <span key={o.override_id} className="text-[10px] bg-amber-50 text-amber-700 border border-amber-100 px-1 rounded uppercase font-bold">
+                                                        {o.participation_role}: {o.points_awarded} pts
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium capitalize ${SCOPE_COLORS[event.scope]}`}>

@@ -20,7 +20,7 @@ const ROLES: { value: ParticipationRole; label: string; desc: string }[] = [
     { value: 'donor',       label: 'Donor',        desc: 'Donation contributor' },
 ];
 
-function PolicyModal({ mode, policy, onClose }: { mode: 'create' | 'edit'; policy?: PointPolicy; onClose: () => void }) {
+function PolicyModal({ mode, policy, availableRoles, onClose }: { mode: 'create' | 'edit'; policy?: PointPolicy; availableRoles?: { value: ParticipationRole; label: string; desc: string }[]; onClose: () => void }) {
     const { data, setData, post, patch, processing, errors, reset, transform } = useForm<PolicyForm>({
         participation_role: (policy?.participation_role ?? '') as PolicyForm['participation_role'],
         default_points:     policy?.default_points ?? 1,
@@ -56,7 +56,7 @@ function PolicyModal({ mode, policy, onClose }: { mode: 'create' | 'edit'; polic
                             <select value={data.participation_role} onChange={e => setData('participation_role', e.target.value as ParticipationRole)}
                                 className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500" required>
                                 <option value="" disabled>Select role…</option>
-                                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label} — {r.desc}</option>)}
+                                {(availableRoles || ROLES).map(r => <option key={r.value} value={r.value}>{r.label} — {r.desc}</option>)}
                             </select>
                             {errors.participation_role && <p className="text-xs text-red-500">{errors.participation_role}</p>}
                         </div>
@@ -104,11 +104,13 @@ export default function PointPoliciesPage({ policies }: Props) {
                     <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Point Policies</h1>
                     <p className="mt-1 text-sm text-slate-500">Configure default point values per participation role.</p>
                 </div>
-                {!allRolesDefined && (
-                    <Button onClick={() => setModal({ open: true, mode: 'create' })} className="bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5 w-full sm:w-auto">
-                        <Plus className="h-4 w-4" /> Add Policy
-                    </Button>
-                )}
+                <Button 
+                    onClick={() => setModal({ open: true, mode: 'create' })} 
+                    className="bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={allRolesDefined}
+                >
+                    <Plus className="h-4 w-4" /> Add Policy
+                </Button>
             </div>
 
             {allRolesDefined && (
@@ -179,7 +181,7 @@ export default function PointPoliciesPage({ policies }: Props) {
                 )}
             </div>
 
-            {modal.open && <PolicyModal mode={modal.mode} policy={modal.policy} onClose={() => setModal(m => ({ ...m, open: false }))} />}
+            {modal.open && <PolicyModal mode={modal.mode} policy={modal.policy} availableRoles={ROLES.filter(r => !policies?.data.some(p => p.participation_role === r.value))} onClose={() => setModal(m => ({ ...m, open: false }))} />}
 
             {deleteTarget && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">

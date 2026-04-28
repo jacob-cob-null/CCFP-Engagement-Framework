@@ -247,7 +247,19 @@ export default function AttendancePage({
                         </div>
                         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                             <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Point Calculation</p>
-                            <p className="mt-1 text-sm text-slate-600">Based on {pointPolicies.length} roles</p>
+                            <div className="mt-1">
+                                {selectedEvent.point_overrides && selectedEvent.point_overrides.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1">
+                                        {selectedEvent.point_overrides.map(o => (
+                                            <span key={o.override_id} className="text-[10px] bg-amber-50 text-amber-700 border border-amber-100 px-1.5 py-0.5 rounded-full font-bold uppercase">
+                                                {o.participation_role}: {o.points_awarded}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm font-bold text-indigo-600">Using Global Policies</p>
+                                )}
+                            </div>
                         </div>
                     </div>
 

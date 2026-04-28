@@ -26,7 +26,7 @@ class AttendanceController extends Controller
         $totalCount = 0;
 
         if ($eventId = $request->get('event_id')) {
-            $selectedEvent = Event::with(['unit', 'term'])->where('event_id', $eventId)->active();
+            $selectedEvent = Event::with(['unit', 'term', 'pointOverrides'])->where('event_id', $eventId)->active();
             
             if ($user->role !== 'ccfp_admin') {
                 $selectedEvent->where('unit_id', $user->unit_id);

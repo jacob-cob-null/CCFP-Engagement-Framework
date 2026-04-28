@@ -74,7 +74,7 @@ export function AppSidebar() {
                             <SidebarMenuButton
                                 size="lg"
                                 asChild
-                                className="text-white hover:bg-[#1a1c3d]"
+                                className="text-white hover:bg-transparent active:bg-transparent"
                             >
                                 <Link href={dashboard()}>
                                     <AppLogo />

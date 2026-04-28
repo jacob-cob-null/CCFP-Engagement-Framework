@@ -1,12 +1,11 @@
 import { Head, router, useForm, usePage, Deferred } from '@inertiajs/react';
 import { AttendanceTableRowsSkeleton } from '@/components/skeletons/attendance-skeleton';
-import { CalendarDays, Pencil, Plus, Trash2, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { CalendarDays, Pencil, Plus, Trash2, X, ChevronLeft } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type {
-    AcademicTerm,
     AttendanceRecord,
     Employee,
     Event,
@@ -16,9 +15,8 @@ import type {
 } from '@/types';
 
 type Props = {
-    events: Event[];
     selectedEvent: Event | null;
-    attendanceRecords?: AttendanceRecord[];
+    attendanceRecords?: Paginated<AttendanceRecord>;
     pointPolicies: PointPolicy[];
     filters: { event_id?: string };
 };
@@ -157,7 +155,6 @@ function OverrideModal({
 }
 
 export default function AttendancePage({
-    events,
     selectedEvent,
     attendanceRecords,
     pointPolicies,
@@ -178,20 +175,6 @@ export default function AttendancePage({
     const [deleteTarget, setDeleteTarget] = useState<AttendanceRecord | null>(
         null,
     );
-    const [currentPage, setCurrentPage] = useState(1);
-    const ITEMS_PER_PAGE = 10;
-
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [selectedEvent?.event_id]);
-
-    function selectEvent(eventId: string) {
-        router.get(
-            '/attendance',
-            { event_id: eventId },
-            { preserveState: true, replace: true },
-        );
-    }
 
     function confirmDelete() {
         if (!deleteTarget) return;
@@ -201,27 +184,43 @@ export default function AttendancePage({
         });
     }
 
-    const totalPoints = (attendanceRecords || []).reduce(
-        (sum, r) => sum + r.points_awarded,
-        0,
-    );
-
-    const totalPages = Math.ceil((attendanceRecords || []).length / ITEMS_PER_PAGE);
-    const paginatedRecords = (attendanceRecords || []).slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
-
     return (
         <div className="flex min-h-screen flex-1 flex-col bg-[#fafafa] p-4 sm:p-8">
-            <Head title="Attendance" />
-            <div className="mb-6">
-                <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
-                    Attendance
-                </h1>
-                <p className="mt-1 text-sm text-slate-500">
-                    Select an event to view or record attendance.
-                </p>
+            <Head title={`Attendance - ${selectedEvent?.title ?? 'No Event'}`} />
+            
+            <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                <div>
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => router.get('/events/setup')}
+                        className="-ml-2 mb-2 flex items-center gap-1 text-slate-500 hover:text-indigo-600"
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                        Back to Events
+                    </Button>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+                        {selectedEvent?.title ?? 'Attendance'}
+                    </h1>
+                    <p className="mt-1 text-sm text-slate-500">
+                        {selectedEvent ? (
+                            <>
+                                {new Date(selectedEvent.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} ·{' '}
+                                <span className="capitalize">{selectedEvent.scope}</span>
+                            </>
+                        ) : (
+                            'Select an event from the events page to manage attendance.'
+                        )}
+                    </p>
+                </div>
+                {selectedEvent && (
+                    <Button
+                        onClick={() => setShowRecord(true)}
+                        className="w-full gap-1.5 bg-indigo-900 text-white hover:bg-indigo-800 sm:w-auto"
+                    >
+                        <Plus className="h-4 w-4" /> Record Attendance
+                    </Button>
+                )}
             </div>
 
             {flash?.success && (
@@ -230,224 +229,166 @@ export default function AttendancePage({
                 </div>
             )}
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                {/* Event Selector */}
-                <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-                    <div className="border-b border-slate-100 px-4 py-3">
-                        <p className="text-sm font-semibold text-slate-700">
-                            Events ({events.length})
-                        </p>
+            {!selectedEvent ? (
+                <div className="flex h-64 flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center">
+                    <CalendarDays className="mb-4 h-12 w-12 text-slate-200" />
+                    <h3 className="mb-1 text-lg font-medium text-slate-900">No Event Selected</h3>
+                    <p className="mb-6 max-w-xs text-sm text-slate-500">
+                        Please go back to the events page and select an event to view its attendance records.
+                    </p>
+                    <Button onClick={() => router.get('/events/setup')}>Go to Events</Button>
+                </div>
+            ) : (
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="rounded-lg border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+                            <p className="text-[10px] sm:text-xs font-medium text-slate-500 uppercase tracking-wider">Total Present</p>
+                            <p className="mt-1 text-xl sm:text-2xl font-bold text-slate-900">{totalCount}</p>
+                        </div>
+                        <div className="rounded-lg border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+                            <p className="text-[10px] sm:text-xs font-medium text-slate-500 uppercase tracking-wider">Point Calculation</p>
+                            <div className="mt-1">
+                                {selectedEvent.point_overrides && selectedEvent.point_overrides.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1">
+                                        {selectedEvent.point_overrides.map(o => (
+                                            <span key={o.override_id} className="text-[10px] bg-amber-50 text-amber-700 border border-amber-100 px-1.5 py-0.5 rounded-full font-bold uppercase">
+                                                {o.participation_role}: {o.points_awarded}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm font-bold text-indigo-600">Using Global Policies</p>
+                                )}
+                            </div>
+                        </div>
                     </div>
-                    <div className="max-h-[600px] divide-y divide-slate-100 overflow-y-auto">
-                        {events.length === 0 ? (
-                            <p className="px-4 py-6 text-center text-sm text-slate-400">
-                                No events available.
-                            </p>
-                        ) : (
-                            events.map((event) => (
-                                <button
-                                    key={event.event_id}
-                                    onClick={() => selectEvent(event.event_id)}
-                                    className={`w-full px-4 py-3 text-left transition-colors hover:bg-slate-50 ${selectedEvent?.event_id === event.event_id ? 'border-l-4 border-l-indigo-600 bg-indigo-50' : ''}`}
-                                >
-                                    <p className="text-sm leading-tight font-medium text-slate-900">
-                                        {event.title}
-                                    </p>
-                                    <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
-                                        <CalendarDays className="h-3 w-3" />{' '}
-                                        {new Date(event.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} ·{' '}
-                                        <span className="capitalize">
-                                            {event.scope}
-                                        </span>
-                                    </p>
-                                </button>
-                            ))
+
+                    <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+                        {recentRecords.length > 0 && (
+                            <div className="border-b border-slate-100 px-4 py-2 text-xs text-slate-500">
+                                Recently added:{' '}
+                                {recentRecords
+                                    .map(
+                                        (r) =>
+                                            r.employee?.employee_name,
+                                    )
+                                    .join(', ')}
+                            </div>
+                        )}
+                        <table className="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead className="bg-slate-50">
+                                <tr>
+                                    <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                                        Employee
+                                    </th>
+                                    <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                                        Role
+                                    </th>
+                                    <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                                        Points
+                                    </th>
+                                    <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                                        Recorded At
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-semibold text-slate-600">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                <Deferred data="attendanceRecords" fallback={<AttendanceTableRowsSkeleton rows={10} />}>
+                                    {(!attendanceRecords || attendanceRecords.data.length === 0) ? (
+                                        <tr>
+                                            <td
+                                                colSpan={5}
+                                                className="px-4 py-8 text-center text-slate-400"
+                                            >
+                                                No attendance recorded yet for this event.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        attendanceRecords.data.map((rec) => (
+                                            <tr
+                                                key={rec.attendance_id}
+                                                className="transition-colors hover:bg-slate-50"
+                                            >
+                                                <td className="px-4 py-3 font-medium text-slate-900">
+                                                    {rec.employee?.employee_name}
+                                                    <span className="ml-1 font-mono text-xs text-slate-400">
+                                                        #{rec.employee?.employee_number}
+                                                    </span>
+                                                    {rec.is_manual_override && (
+                                                        <span className="ml-1 rounded bg-orange-100 px-1 text-xs text-orange-600">
+                                                            override
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 text-slate-600 capitalize">
+                                                    {rec.participation_role}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">
+                                                        {rec.points_awarded} pt{rec.points_awarded !== 1 ? 's' : ''}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-xs text-slate-400">
+                                                    {new Date(rec.recorded_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <div className="flex justify-end gap-1">
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            title="Override"
+                                                            onClick={() => setOverrideTarget(rec)}
+                                                        >
+                                                            <Pencil className="h-4 w-4 text-slate-500" />
+                                                        </Button>
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            title="Remove"
+                                                            onClick={() => setDeleteTarget(rec)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4 text-red-400" />
+                                                        </Button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </Deferred>
+                            </tbody>
+                        </table>
+                        
+                        {attendanceRecords && attendanceRecords.total > 0 && (
+                            <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:gap-0">
+                                <span className="text-center text-xs text-slate-500 sm:text-left">
+                                    Showing {attendanceRecords.from} to {attendanceRecords.to || 0} of {attendanceRecords.total} entries
+                                </span>
+                                <div className="flex gap-1">
+                                    {attendanceRecords.links.map((link, i) => (
+                                        link.url ? (
+                                            <button 
+                                                key={i} 
+                                                onClick={() => router.get(link.url!, {}, { preserveState: true, replace: true })}
+                                                className={`rounded px-3 py-1.5 border text-xs ${link.active ? 'bg-indigo-900 text-white border-indigo-900' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+                                                dangerouslySetInnerHTML={{ __html: link.label }} 
+                                            />
+                                        ) : (
+                                            <span 
+                                                key={i} 
+                                                className="rounded px-3 py-1.5 border border-slate-100 bg-slate-50 text-slate-300 text-xs" 
+                                                dangerouslySetInnerHTML={{ __html: link.label }} 
+                                            />
+                                        )
+                                    ))}
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>
-
-                {/* Attendance Records */}
-                <div className="lg:col-span-2">
-                    {!selectedEvent ? (
-                        <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white text-sm text-slate-400">
-                            Select an event to view attendance records.
-                        </div>
-                    ) : (
-                        <>
-                            <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center sm:gap-0">
-                                <div>
-                                    <h2 className="font-bold text-slate-900">
-                                        {selectedEvent.title}
-                                    </h2>
-                                    <p className="text-xs text-slate-500">
-                                        {new Date(selectedEvent.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} ·{' '}
-                                        {attendanceRecords?.length ?? 0} records ·{' '}
-                                        {totalPoints} total pts
-                                    </p>
-                                    <p className="text-xs text-slate-400">
-                                        Quick check: {totalCount} present ·
-                                        Recent: {recentRecords.length}
-                                    </p>
-                                </div>
-                                <Button
-                                    onClick={() => setShowRecord(true)}
-                                    className="w-full gap-1.5 bg-indigo-900 text-white hover:bg-indigo-800 sm:w-auto"
-                                >
-                                    <Plus className="h-4 w-4" /> Record
-                                </Button>
-                            </div>
-
-                            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-                                {recentRecords.length > 0 && (
-                                    <div className="border-b border-slate-100 px-4 py-2 text-xs text-slate-500">
-                                        Recent records:{' '}
-                                        {recentRecords
-                                            .map(
-                                                (r) =>
-                                                    r.employee?.employee_name,
-                                            )
-                                            .join(', ')}
-                                    </div>
-                                )}
-                                <table className="min-w-full divide-y divide-slate-200 text-sm">
-                                    <thead className="bg-slate-50">
-                                        <tr>
-                                            <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                                                Employee
-                                            </th>
-                                            <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                                                Role
-                                            </th>
-                                            <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                                                Points
-                                            </th>
-                                            <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                                                Recorded At
-                                            </th>
-                                            <th className="px-4 py-3 text-right font-semibold text-slate-600">
-                                                Actions
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        <Deferred data="attendanceRecords" fallback={<AttendanceTableRowsSkeleton rows={5} />}>
-                                            {paginatedRecords.length === 0 ? (
-                                                <tr>
-                                                    <td
-                                                        colSpan={5}
-                                                        className="px-4 py-8 text-center text-slate-400"
-                                                    >
-                                                        No attendance recorded yet.
-                                                    </td>
-                                                </tr>
-                                            ) : (
-                                                paginatedRecords.map((rec) => (
-                                                    <tr
-                                                        key={rec.attendance_id}
-                                                        className="transition-colors hover:bg-slate-50"
-                                                    >
-                                                        <td className="px-4 py-3 font-medium text-slate-900">
-                                                            {
-                                                                rec.employee
-                                                                    ?.employee_name
-                                                            }
-                                                            <span className="ml-1 font-mono text-xs text-slate-400">
-                                                                #
-                                                                {
-                                                                    rec.employee
-                                                                        ?.employee_number
-                                                                }
-                                                            </span>
-                                                            {rec.is_manual_override && (
-                                                                <span className="ml-1 rounded bg-orange-100 px-1 text-xs text-orange-600">
-                                                                    override
-                                                                </span>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-4 py-3 text-slate-600 capitalize">
-                                                            {rec.participation_role}
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">
-                                                                {rec.points_awarded}{' '}
-                                                                pt
-                                                                {rec.points_awarded !==
-                                                                1
-                                                                    ? 's'
-                                                                    : ''}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-xs text-slate-400">
-                                                            {new Date(
-                                                                rec.recorded_at,
-                                                            ).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                                                        </td>
-                                                        <td className="px-4 py-3 text-right">
-                                                            <div className="flex justify-end gap-1">
-                                                                <Button
-                                                                    size="icon"
-                                                                    variant="ghost"
-                                                                    title="Override"
-                                                                    onClick={() =>
-                                                                        setOverrideTarget(
-                                                                            rec,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Pencil className="h-4 w-4 text-slate-500" />
-                                                                </Button>
-                                                                <Button
-                                                                    size="icon"
-                                                                    variant="ghost"
-                                                                    title="Remove"
-                                                                    onClick={() =>
-                                                                        setDeleteTarget(
-                                                                            rec,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Trash2 className="h-4 w-4 text-red-400" />
-                                                                </Button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            )}
-                                        </Deferred>
-                                    </tbody>
-                                </table>
-                                {attendanceRecords && attendanceRecords.length > 0 && (
-                                    <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:gap-0">
-                                        <span className="text-center text-xs text-slate-500 sm:text-left">
-                                            Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, attendanceRecords.length)} to {Math.min(currentPage * ITEMS_PER_PAGE, attendanceRecords.length)} of {attendanceRecords.length} entries
-                                        </span>
-                                        <div className="flex gap-2">
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm" 
-                                                disabled={currentPage === 1}
-                                                onClick={() => setCurrentPage(p => p - 1)}
-                                                className="h-8 text-xs"
-                                            >
-                                                Previous
-                                            </Button>
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm" 
-                                                disabled={currentPage === totalPages || totalPages === 0}
-                                                onClick={() => setCurrentPage(p => p + 1)}
-                                                className="h-8 text-xs"
-                                            >
-                                                Next
-                                            </Button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </>
-                    )}
-                </div>
-            </div>
+            )}
 
             {showRecord && selectedEvent && (
                 <RecordAttendancePanel
@@ -499,8 +440,10 @@ export default function AttendancePage({
 AttendancePage.layout = {
     breadcrumbs: [
         { title: 'Dashboard', href: '/dashboard' },
+        { title: 'Events', href: '/events/setup' },
         { title: 'Attendance', href: '/attendance' },
     ],
 };
+
 
 

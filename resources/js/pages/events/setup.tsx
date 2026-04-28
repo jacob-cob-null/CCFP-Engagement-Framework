@@ -1,10 +1,16 @@
 import { Head, router, useForm, usePage, Deferred } from '@inertiajs/react';
-import { Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Pencil, Plus, Trash2, X, ClipboardList, MoreHorizontal, Download } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { AcademicTerm, Event, EventScope, OrganizationalUnit, Paginated } from '@/types';
+import type { AcademicTerm, Event, EventScope, OrganizationalUnit, Paginated, ParticipationRole } from '@/types';
 
 type Props = {
     events?: Paginated<Event>;
@@ -27,6 +33,7 @@ type EventFormData = {
     term_id: string;
     unit_id: string;
     event_date: string;
+    point_overrides: { participation_role: ParticipationRole; points_awarded: number }[];
 };
 
 function EventModal({ mode, event, terms, units, userRole, userUnitId, onClose }: {
@@ -48,6 +55,10 @@ function EventModal({ mode, event, terms, units, userRole, userUnitId, onClose }
         term_id:          event?.term_id          ?? '',
         unit_id:          event?.unit_id          ?? (isAdmin ? '' : (userUnitId ?? '')),
         event_date:       event?.event_date       ?? '',
+        point_overrides:  event?.point_overrides?.map(o => ({
+            participation_role: o.participation_role,
+            points_awarded: o.points_awarded
+        })) ?? [],
     });
 
     // Non-admins can't pick university scope
@@ -55,12 +66,32 @@ function EventModal({ mode, event, terms, units, userRole, userUnitId, onClose }
 
     function submit(e: React.FormEvent) {
         e.preventDefault();
+        const options = { onSuccess: () => { reset(); onClose(); } };
         if (mode === 'create') {
-            post('/events', { onSuccess: () => { reset(); onClose(); } });
+            post('/events', options);
         } else {
-            patch(`/events/${event!.event_id}`, { onSuccess: () => onClose() });
+            patch(`/events/${event!.event_id}`, options);
         }
     }
+
+    const addOverride = () => {
+        const remainingRoles = (['participant', 'organizer', 'donor'] as ParticipationRole[]).filter(
+            r => !data.point_overrides.some(o => o.participation_role === r)
+        );
+        if (remainingRoles.length > 0) {
+            setData('point_overrides', [...data.point_overrides, { participation_role: remainingRoles[0], points_awarded: 0 }]);
+        }
+    };
+
+    const removeOverride = (index: number) => {
+        setData('point_overrides', data.point_overrides.filter((_, i) => i !== index));
+    };
+
+    const updateOverride = (index: number, field: string, value: any) => {
+        const newOverrides = [...data.point_overrides];
+        newOverrides[index] = { ...newOverrides[index], [field]: value };
+        setData('point_overrides', newOverrides);
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -127,6 +158,50 @@ function EventModal({ mode, event, terms, units, userRole, userUnitId, onClose }
                             className="min-h-[80px] w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                             placeholder="Optional description…" />
                     </div>
+
+                    <div className="space-y-3 pt-2">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-sm font-bold text-slate-700">Point Overrides (Optional)</Label>
+                            {data.point_overrides.length < 3 && (
+                                <button type="button" onClick={addOverride} className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                    <Plus className="h-3 w-3" /> Add Override
+                                </button>
+                            )}
+                        </div>
+                        {data.point_overrides.length === 0 ? (
+                            <p className="text-xs text-slate-400 italic">No custom points defined. Using global policies.</p>
+                        ) : (
+                            <div className="space-y-2">
+                                {data.point_overrides.map((override, i) => (
+                                    <div key={i} className="flex items-center gap-2 p-2 rounded-md bg-slate-50 border border-slate-100">
+                                        <select 
+                                            value={override.participation_role} 
+                                            onChange={e => updateOverride(i, 'participation_role', e.target.value)}
+                                            className="h-8 flex-1 rounded border border-slate-200 bg-white px-2 text-xs outline-none focus:ring-1 focus:ring-indigo-500"
+                                        >
+                                            {(['participant', 'organizer', 'donor'] as ParticipationRole[]).map(r => (
+                                                <option key={r} value={r} disabled={data.point_overrides.some((o, idx) => o.participation_role === r && idx !== i)}>
+                                                    {r.charAt(0).toUpperCase() + r.slice(1)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <Input 
+                                            type="number" 
+                                            min={0} 
+                                            value={override.points_awarded} 
+                                            onChange={e => updateOverride(i, 'points_awarded', parseInt(e.target.value) || 0)}
+                                            className="h-8 w-20 px-2 text-xs" 
+                                        />
+                                        <span className="text-[10px] text-slate-400 font-medium">PTS</span>
+                                        <button type="button" onClick={() => removeOverride(i)} className="text-slate-400 hover:text-red-500">
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {errors.point_overrides && <p className="text-xs text-red-500">{errors.point_overrides}</p>}
+                    </div>
                     <div className="flex justify-end gap-2 pt-2">
                         <Button type="button" variant="outline" onClick={onClose} disabled={processing}>Cancel</Button>
                         <Button type="submit" disabled={processing} className="bg-indigo-900 text-white hover:bg-indigo-800">
@@ -168,7 +243,7 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
     const currentTerm = terms.find(t => t.is_current);
 
     return (
-        <div className="flex flex-col flex-1 p-8 bg-[#fafafa] min-h-screen">
+        <div className="flex flex-col flex-1 p-4 sm:p-8 bg-[#fafafa] min-h-screen">
             <Head title="Event Setup" />
             <div className="mb-6 flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left sm:gap-0">
                 <div>
@@ -178,31 +253,50 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
                         {currentTerm && <span className="ml-2 font-medium text-indigo-600 block sm:inline">Current: {currentTerm.academic_year} {currentTerm.semester} Semester</span>}
                     </p>
                 </div>
-                <Button onClick={() => setModal({ open: true, mode: 'create' })} className="bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5 w-full sm:w-auto">
-                    <Plus className="h-4 w-4" /> Create Event
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <Button 
+                        variant="outline" 
+                        className="flex items-center justify-center gap-2 border-slate-200"
+                        onClick={() => window.location.href = '/export/events'}
+                    >
+                        <Download className="h-4 w-4" />
+                        <span>Export CSV</span>
+                    </Button>
+                    <Button onClick={() => setModal({ open: true, mode: 'create' })} className="bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5 w-full sm:w-auto">
+                        <Plus className="h-4 w-4" /> Create Event
+                    </Button>
+                </div>
             </div>
 
             {flash?.success && (
                 <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{flash.success}</div>
             )}
 
-            {/* Filters */}
-            <div className="mb-4 flex flex-wrap items-center justify-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:justify-start">
-                <Input placeholder="Search events…" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && applyFilters()} className="w-48" />
-                <select value={scopeFilter} onChange={e => setScopeFilter(e.target.value)}
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value="">All Scopes</option>
-                    {SCOPES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
-                <select value={termFilter} onChange={e => setTermFilter(e.target.value)}
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value="">All Terms</option>
-                    {terms.map(t => <option key={t.term_id} value={t.term_id}>{t.academic_year} {t.semester}</option>)}
-                </select>
-                <Button variant="outline" onClick={applyFilters}>Filter</Button>
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                <Input placeholder="Search events…" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && applyFilters()} className="w-full sm:w-48" />
+                <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+                    <select 
+                        value={scopeFilter} 
+                        onChange={e => setScopeFilter(e.target.value as EventScope | '')}
+                        className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-32 sm:flex-none"
+                    >
+                        <option value="">All Scopes</option>
+                        <option value="university">University</option>
+                        <option value="college">College</option>
+                        <option value="organization">Organization</option>
+                    </select>
+                    <select 
+                        value={termFilter} 
+                        onChange={e => setTermFilter(e.target.value)}
+                        className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-48 sm:flex-none"
+                    >
+                        <option value="">All Terms</option>
+                        {terms.map(t => <option key={t.term_id} value={t.term_id}>{t.academic_year} {t.semester}</option>)}
+                    </select>
+                    <Button variant="outline" onClick={applyFilters} className="flex-1 sm:flex-none">Filter</Button>
+                </div>
                 {(search || scopeFilter || termFilter) && (
-                    <Button variant="ghost" onClick={() => { setSearch(''); setScopeFilter(''); setTermFilter(''); router.get('/events/setup'); }} className="text-slate-500">Clear</Button>
+                    <Button variant="ghost" onClick={() => { setSearch(''); setScopeFilter(''); setTermFilter(''); router.get('/events/setup'); }} className="w-full text-slate-500 sm:w-auto">Clear</Button>
                 )}
             </div>
 
@@ -226,15 +320,31 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
                             ) : events.data.map(event => (
                                 <tr key={event.event_id} className="hover:bg-slate-50 transition-colors">
                                     <td className="px-4 py-3 font-medium text-slate-900">
-                                        {event.title}
+                                        <button 
+                                            onClick={() => router.get('/attendance', { event_id: event.event_id })}
+                                            className="text-left hover:text-indigo-600 hover:underline transition-colors block"
+                                        >
+                                            {event.title}
+                                        </button>
                                         {event.activity_program && <p className="text-xs text-slate-400">{event.activity_program}</p>}
+                                        {event.point_overrides && event.point_overrides.length > 0 && (
+                                            <div className="mt-1 flex flex-wrap gap-1">
+                                                {event.point_overrides.map(o => (
+                                                    <span key={o.override_id} className="text-[10px] bg-amber-50 text-amber-700 border border-amber-100 px-1 rounded uppercase font-bold">
+                                                        {o.participation_role}: {o.points_awarded} pts
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium capitalize ${SCOPE_COLORS[event.scope]}`}>
                                             {event.scope}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 text-slate-600">{event.event_date as string}</td>
+                                    <td className="px-4 py-3 text-slate-600">
+                                        {new Date(event.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                    </td>
                                     <td className="px-4 py-3 text-slate-600">
                                         {event.term ? `${event.term.academic_year} ${event.term.semester}` : event.term_id}
                                     </td>
@@ -242,10 +352,28 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
                                         {event.unit?.unit_name ?? event.unit_id}
                                     </td>
                                     <td className="px-4 py-3 text-right">
-                                        <div className="flex justify-end gap-1">
-                                            <Button size="icon" variant="ghost" onClick={() => setModal({ open: true, mode: 'edit', event })}><Pencil className="h-4 w-4 text-slate-500" /></Button>
-                                            <Button size="icon" variant="ghost" onClick={() => setDeleteTarget(event)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
-                                        </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button size="icon" variant="ghost" className="h-8 w-8">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                    <span className="sr-only">Open menu</span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => router.get('/attendance', { event_id: event.event_id })}>
+                                                    <ClipboardList className="mr-2 h-4 w-4 text-indigo-600" />
+                                                    <span>View Attendance</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setModal({ open: true, mode: 'edit', event })}>
+                                                    <Pencil className="mr-2 h-4 w-4 text-slate-500" />
+                                                    <span>Edit Event</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setDeleteTarget(event)} variant="destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    <span>Archive Event</span>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </td>
                                 </tr>
                             ))}
@@ -255,9 +383,9 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
             </div>
 
             {/* Pagination */}
-            {events && events.last_page > 1 && (
+            {events && events.total > 0 && (
                 <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-                    <span>Showing {events.from}–{events.to} of {events.total}</span>
+                    <span>Showing {events.from}–{events.to || 0} of {events.total}</span>
                     <div className="flex gap-1">
                         {events.links.map((link, i) => (
                             link.url ? (
@@ -316,3 +444,4 @@ function TableSkeleton({ rows = 5, columns = 6 }: { rows?: number; columns?: num
         </>
     );
 }
+

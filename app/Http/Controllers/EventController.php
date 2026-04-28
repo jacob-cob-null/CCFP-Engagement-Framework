@@ -18,7 +18,7 @@ class EventController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Event::with(['term', 'unit']);
+        $query = Event::with(['term', 'unit', 'pointOverrides']);
 
         if ($search = $request->get('search')) {
             $query->where('title', 'ilike', "%{$search}%");

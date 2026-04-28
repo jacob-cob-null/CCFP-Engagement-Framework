@@ -64,6 +64,14 @@ export type AcademicTerm = {
     created_at: string;
 };
 
+export type EventPointOverride = {
+    override_id: string;
+    event_id: string;
+    participation_role: ParticipationRole;
+    points_awarded: number;
+    created_at: string;
+};
+
 export type Event = {
     event_id: string;
     title: string;
@@ -80,6 +88,7 @@ export type Event = {
     is_archived: boolean;
     term?: AcademicTerm;
     unit?: OrganizationalUnit;
+    point_overrides?: EventPointOverride[];
 };
 
 export type AttendanceRecord = {

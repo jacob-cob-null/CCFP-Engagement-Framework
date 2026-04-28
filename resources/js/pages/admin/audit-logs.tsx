@@ -1,6 +1,6 @@
 import { Head, router, usePage, Deferred } from '@inertiajs/react';
 import { AuditTableRowsSkeleton } from '@/components/skeletons/audit-logs-skeleton';
-import { Search, Eye } from 'lucide-react';
+import { Search, Eye, Download } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,38 +22,50 @@ export default function AuditLogsPage({ logs, actionTypes, filters }: Props) {
     }
 
     return (
-        <div className="flex flex-col flex-1 p-8 bg-[#fafafa] min-h-screen">
+        <div className="flex flex-col flex-1 p-4 sm:p-8 bg-[#fafafa] min-h-screen">
             <Head title="Audit Logs" />
-            <div className="mb-6">
-                <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Audit Trail</h1>
-                <p className="mt-1 text-sm text-slate-500">Read-only event stream of all administrative actions securely logged by the system.</p>
+            <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Audit Trail</h1>
+                    <p className="mt-1 text-sm text-slate-500">Read-only event stream of all administrative actions securely logged by the system.</p>
+                </div>
+                <Button 
+                    variant="outline" 
+                    className="flex items-center justify-center gap-2 border-slate-200 w-full sm:w-auto"
+                    onClick={() => window.location.href = '/export/audit-logs'}
+                >
+                    <Download className="h-4 w-4" />
+                    <span>Export CSV</span>
+                </Button>
             </div>
 
             {/* Filters */}
-            <div className="mb-4 flex flex-wrap gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                 <Input 
                     placeholder="Search descriptions…" 
                     value={search} 
                     onChange={e => setSearch(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && applyFilters()} 
-                    className="w-64" 
+                    className="w-full sm:w-64" 
                 />
-                <select 
-                    value={actionFilter} 
-                    onChange={e => setActionFilter(e.target.value)}
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                    <option value="">All Action Types</option>
-                    {actionTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-                <Button variant="outline" onClick={applyFilters}>Filter</Button>
+                <div className="flex w-full gap-2 sm:w-auto">
+                    <select 
+                        value={actionFilter} 
+                        onChange={e => setActionFilter(e.target.value)}
+                        className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto sm:flex-none"
+                    >
+                        <option value="">All Action Types</option>
+                        {actionTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <Button variant="outline" onClick={applyFilters} className="flex-1 sm:flex-none">Filter</Button>
+                </div>
                 {(search || actionFilter) && (
-                    <Button variant="ghost" onClick={() => { setSearch(''); setActionFilter(''); router.get('/audit-logs'); }} className="text-slate-500">Clear</Button>
+                    <Button variant="ghost" onClick={() => { setSearch(''); setActionFilter(''); router.get('/audit-logs'); }} className="w-full sm:w-auto text-slate-500">Clear</Button>
                 )}
             </div>
 
             {/* Table */}
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
                 <table className="min-w-full divide-y divide-slate-200 text-sm">
                     <thead className="bg-slate-50">
                         <tr>
@@ -70,7 +82,9 @@ export default function AuditLogsPage({ logs, actionTypes, filters }: Props) {
                                 <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400 font-sans text-sm">No activity logs found.</td></tr>
                             ) : logs.data.map(log => (
                                 <tr key={log.log_id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="px-4 py-3 text-slate-500">{new Date(log.created_at).toLocaleString()}</td>
+                                    <td className="px-4 py-3 text-slate-500">
+                                        {new Date(log.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                    </td>
                                     <td className="px-4 py-3 font-medium text-slate-700">{log.user?.user_name || log.user_id}</td>
                                     <td className="px-4 py-3"><span className="text-indigo-700 bg-indigo-50/50 px-2 py-0.5 rounded">{log.action_type}</span></td>
                                     <td className="px-4 py-3 text-slate-600 max-w-sm"><div className="truncate" title={log.description}>{log.description}</div></td>
@@ -85,17 +99,24 @@ export default function AuditLogsPage({ logs, actionTypes, filters }: Props) {
             </div>
 
             {/* Pagination */}
-            {logs && logs.last_page > 1 && (
+            {logs && logs.total > 0 && (
                 <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-                    <span>Showing {logs.from}–{logs.to} of {logs.total}</span>
+                    <span>Showing {logs.from || 0}–{logs.to || 0} of {logs.total}</span>
                     <div className="flex gap-1">
                         {logs.links.map((link, i) => (
                             link.url ? (
-                                <a key={i} href={link.url}
+                                <button 
+                                    key={i} 
+                                    onClick={() => router.get(link.url!, {}, { preserveState: true, replace: true })}
                                     className={`rounded px-3 py-1.5 border transition-colors ${link.active ? 'bg-indigo-900 text-white border-indigo-900' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
-                                    dangerouslySetInnerHTML={{ __html: link.label }} />
+                                    dangerouslySetInnerHTML={{ __html: link.label }} 
+                                />
                             ) : (
-                                <span key={i} className="rounded px-3 py-1.5 border border-slate-100 bg-slate-50 text-slate-300" dangerouslySetInnerHTML={{ __html: link.label }} />
+                                <span 
+                                    key={i} 
+                                    className="rounded px-3 py-1.5 border border-slate-100 bg-slate-50 text-slate-300" 
+                                    dangerouslySetInnerHTML={{ __html: link.label }} 
+                                />
                             )
                         ))}
                     </div>

@@ -20,7 +20,7 @@ class AuditLogController extends Controller
             $query->where('description', 'ilike', "%{$search}%");
         }
 
-        $logs = $query->paginate(30)->withQueryString();
+        $logs = $query->paginate(10)->withQueryString();
 
         // Get unique action types for the filter dropdown
         $actionTypes = ActivityLog::select('action_type')->distinct()->pluck('action_type')->toArray();

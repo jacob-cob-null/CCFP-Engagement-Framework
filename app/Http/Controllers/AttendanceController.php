@@ -19,31 +19,29 @@ class AttendanceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Event::with('unit')->active();
-
         $user = Auth::user();
-        if ($user->role !== 'ccfp_admin') {
-            $query->where('unit_id', $user->unit_id);
-        }
-
-        $events = $query->orderByDesc('event_date')->get(['event_id', 'title', 'event_date', 'scope', 'unit_id', 'term_id']);
-
-        $attendanceRecords = collect();
-        $selectedEvent     = null;
-        $recentRecords     = collect();
-        $totalCount        = 0;
+        $selectedEvent = null;
+        $attendanceRecords = null;
+        $recentRecords = collect();
+        $totalCount = 0;
 
         if ($eventId = $request->get('event_id')) {
-            $selectedEvent = Event::with('unit', 'term')->where('event_id', $eventId)->active()->first();
+            $selectedEvent = Event::with(['unit', 'term', 'pointOverrides'])->where('event_id', $eventId)->active();
+            
+            if ($user->role !== 'ccfp_admin') {
+                $selectedEvent->where('unit_id', $user->unit_id);
+            }
+            
+            $selectedEvent = $selectedEvent->first();
 
             if ($selectedEvent) {
                 $attendanceRecords = Inertia::defer(fn() => Attendance::with('employee')
                     ->where('event_id', $eventId)
                     ->active()
                     ->orderBy('recorded_at', 'desc')
-                    ->get());
+                    ->paginate(10)
+                    ->withQueryString());
 
-                // Recent records and total count to support quick/live checks on the main page
                 $recentRecords = Inertia::defer(fn() => Attendance::with('employee')
                     ->where('event_id', $eventId)
                     ->active()
@@ -55,13 +53,11 @@ class AttendanceController extends Controller
             }
         }
 
-        // Point policies from cache — used for display in modal
         $policies = Cache::remember(CacheKeys::POINT_POLICIES, CacheKeys::TTL_STABLE, fn() =>
             PointPolicy::orderBy('participation_role')->get()->toArray()
         );
 
         return Inertia::render('attendance', [
-            'events'            => $events,
             'selectedEvent'     => $selectedEvent,
             'attendanceRecords' => $attendanceRecords,
             'pointPolicies'     => $policies,
@@ -81,13 +77,19 @@ class AttendanceController extends Controller
 
         $event = Event::where('event_id', $validated['event_id'])->active()->firstOrFail();
 
-        $employee = Employee::where('employee_name', 'ilike', $validated['search_query'])
-            ->orWhere('employee_number', $validated['search_query'])
-            ->whereNull('deleted_at')
-            ->first();
+        $employeeQuery = Employee::where(function ($q) use ($validated) {
+            $q->where('employee_name', 'ilike', $validated['search_query'])
+              ->orWhere('employee_number', $validated['search_query']);
+        })->active();
+
+        if (Auth::user()->role !== 'ccfp_admin') {
+            $employeeQuery->where('unit_id', Auth::user()->unit_id);
+        }
+
+        $employee = $employeeQuery->first();
 
         if (!$employee) {
-            return back()->withErrors(['search_query' => 'No active employee found with that name or number.']);
+            return back()->withErrors(['search_query' => 'No active employee found within your unit with that name or number.']);
         }
 
         $existing = Attendance::where('event_id', $event->event_id)
@@ -194,7 +196,9 @@ class AttendanceController extends Controller
     {
         $query = Employee::active();
 
-        if ($orgId = $request->get('org_id')) {
+        if (Auth::user()->role !== 'ccfp_admin') {
+            $query->where('unit_id', Auth::user()->unit_id);
+        } elseif ($orgId = $request->get('org_id')) {
             $query->where('unit_id', $orgId);
         }
 
@@ -212,8 +216,17 @@ class AttendanceController extends Controller
             'role'        => 'required|in:participant,organizer,donor',
         ]);
 
-        $event = Event::where('event_id', $validated['event_id'])->active()->firstOrFail();
-        $employee = Employee::where('employee_id', $validated['employee_id'])->whereNull('deleted_at')->firstOrFail();
+        $event = Event::where('event_id', $validated['event_id'])->active();
+        if (Auth::user()->role !== 'ccfp_admin') {
+            $event->where('unit_id', Auth::user()->unit_id);
+        }
+        $event = $event->firstOrFail();
+
+        $employee = Employee::where('employee_id', $validated['employee_id'])->active();
+        if (Auth::user()->role !== 'ccfp_admin') {
+            $employee->where('unit_id', Auth::user()->unit_id);
+        }
+        $employee = $employee->firstOrFail();
 
         $existing = Attendance::where('event_id', $event->event_id)
             ->where('employee_id', $employee->employee_id)

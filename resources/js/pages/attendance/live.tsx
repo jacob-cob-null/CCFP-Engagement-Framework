@@ -46,7 +46,7 @@ export default function LiveAttendancePage({ events, selectedEvent, recentRecord
     }
 
     return (
-        <div className="flex flex-col flex-1 p-8 bg-[#fafafa] min-h-screen">
+        <div className="flex flex-col flex-1 p-4 sm:p-8 bg-[#fafafa] min-h-screen">
             <Head title="Live Attendance" />
 
             {/* Title Section */}

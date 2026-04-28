@@ -1,8 +1,14 @@
 import { Head, router, useForm, Deferred } from '@inertiajs/react';
 import { UnitTableRowsSkeleton } from '@/components/skeletons/organizational-units-skeleton';
-import { Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Pencil, Plus, Trash2, X, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { OrganizationalUnit, Paginated } from '@/types';
@@ -92,7 +98,7 @@ export default function OrganizationalUnitsPage({ units, filters }: Props) {
     }
 
     return (
-        <div className="flex flex-col flex-1 p-8 bg-[#fafafa] min-h-screen">
+        <div className="flex flex-col flex-1 p-4 sm:p-8 bg-[#fafafa] min-h-screen">
             <Head title="Organizational Units" />
             <div className="mb-6 flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left sm:gap-0">
                 <div>
@@ -104,15 +110,17 @@ export default function OrganizationalUnitsPage({ units, filters }: Props) {
                 </Button>
             </div>
 
-            <div className="mb-4 flex flex-wrap items-center justify-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:justify-start">
-                <Input placeholder="Search by name…" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && applyFilters()} className="w-56" />
-                <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value="">All Types</option>
-                    {UNIT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
-                <Button variant="outline" onClick={applyFilters}>Filter</Button>
-                {(search || typeFilter) && <Button variant="ghost" onClick={() => { setSearch(''); setTypeFilter(''); router.get('/organizational-units'); }} className="text-slate-500">Clear</Button>}
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                <Input placeholder="Search by name…" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && applyFilters()} className="w-full sm:w-56" />
+                <div className="flex w-full gap-2 sm:w-auto">
+                    <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+                        className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto sm:flex-none">
+                        <option value="">All Types</option>
+                        {UNIT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                    </select>
+                    <Button variant="outline" onClick={applyFilters} className="flex-1 sm:flex-none">Filter</Button>
+                </div>
+                {(search || typeFilter) && <Button variant="ghost" onClick={() => { setSearch(''); setTypeFilter(''); router.get('/organizational-units'); }} className="w-full sm:w-auto text-slate-500">Clear</Button>}
             </div>
 
             <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -139,10 +147,24 @@ export default function OrganizationalUnitsPage({ units, filters }: Props) {
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 text-right">
-                                        <div className="flex justify-end gap-1">
-                                            <Button size="icon" variant="ghost" onClick={() => setModal({ open: true, mode: 'edit', unit })}><Pencil className="h-4 w-4 text-slate-500" /></Button>
-                                            <Button size="icon" variant="ghost" onClick={() => setDeleteTarget(unit)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
-                                        </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button size="icon" variant="ghost" className="h-8 w-8">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                    <span className="sr-only">Open menu</span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => setModal({ open: true, mode: 'edit', unit })}>
+                                                    <Pencil className="mr-2 h-4 w-4 text-slate-500" />
+                                                    <span>Edit Unit</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setDeleteTarget(unit)} variant="destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    <span>Archive Unit</span>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </td>
                                 </tr>
                             ))}
@@ -150,6 +172,30 @@ export default function OrganizationalUnitsPage({ units, filters }: Props) {
                     </tbody>
                 </table>
             </div>
+
+            {units && units.total > 0 && (
+                <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+                    <span>Showing {units.from || 0}–{units.to || 0} of {units.total}</span>
+                    <div className="flex gap-1">
+                        {units.links.map((link, i) => (
+                            link.url ? (
+                                <button 
+                                    key={i} 
+                                    onClick={() => router.get(link.url!, {}, { preserveState: true, replace: true })}
+                                    className={`rounded px-3 py-1.5 border text-sm transition-colors ${link.active ? 'bg-indigo-900 text-white border-indigo-900' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+                                    dangerouslySetInnerHTML={{ __html: link.label }} 
+                                />
+                            ) : (
+                                <span 
+                                    key={i} 
+                                    className="rounded px-3 py-1.5 border border-slate-100 bg-slate-50 text-slate-300 text-sm" 
+                                    dangerouslySetInnerHTML={{ __html: link.label }} 
+                                />
+                            )
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {modal.open && <UnitModal mode={modal.mode} unit={modal.unit} onClose={() => setModal(m => ({ ...m, open: false }))} />}
 

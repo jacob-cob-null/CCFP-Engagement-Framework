@@ -212,7 +212,17 @@ function RolePickerModal({
                         </div>
                     )}
                     <div className="grid gap-1.5">
-                        <Label htmlFor="role">Participation Role</Label>
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="role">Participation Role</Label>
+                            {(() => {
+                                const override = event.point_overrides?.find(o => o.participation_role === role);
+                                return (
+                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                        {override ? `${override.points_awarded} PTS (Custom)` : 'Default Points'}
+                                    </span>
+                                );
+                            })()}
+                        </div>
                         <select
                             id="role"
                             value={role}

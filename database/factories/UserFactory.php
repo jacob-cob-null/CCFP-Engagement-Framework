@@ -25,14 +25,13 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
-            'two_factor_secret' => null,
-            'two_factor_recovery_codes' => null,
-            'two_factor_confirmed_at' => null,
+            'user_id' => (string) Str::uuid(),
+            'user_name' => fake()->name(),
+            'user_email' => fake()->unique()->safeEmail(),
+            'role' => 'ccfp_admin', // Default role
+            'unit_id' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
     }
 

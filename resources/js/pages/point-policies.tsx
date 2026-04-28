@@ -1,13 +1,19 @@
 import { Head, router, useForm, Deferred } from '@inertiajs/react';
 import { PolicyTableRowsSkeleton } from '@/components/skeletons/point-policies-skeleton';
-import { Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Pencil, Plus, Trash2, X, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { PointPolicy, ParticipationRole } from '@/types';
+import type { PointPolicy, ParticipationRole, Paginated } from '@/types';
 
-type Props = { policies?: PointPolicy[] };
+type Props = { policies?: Paginated<PointPolicy> };
 
 type PolicyForm = {
     participation_role: ParticipationRole | '';
@@ -20,7 +26,7 @@ const ROLES: { value: ParticipationRole; label: string; desc: string }[] = [
     { value: 'donor',       label: 'Donor',        desc: 'Donation contributor' },
 ];
 
-function PolicyModal({ mode, policy, onClose }: { mode: 'create' | 'edit'; policy?: PointPolicy; onClose: () => void }) {
+function PolicyModal({ mode, policy, availableRoles, onClose }: { mode: 'create' | 'edit'; policy?: PointPolicy; availableRoles?: { value: ParticipationRole; label: string; desc: string }[]; onClose: () => void }) {
     const { data, setData, post, patch, processing, errors, reset, transform } = useForm<PolicyForm>({
         participation_role: (policy?.participation_role ?? '') as PolicyForm['participation_role'],
         default_points:     policy?.default_points ?? 1,
@@ -56,7 +62,7 @@ function PolicyModal({ mode, policy, onClose }: { mode: 'create' | 'edit'; polic
                             <select value={data.participation_role} onChange={e => setData('participation_role', e.target.value as ParticipationRole)}
                                 className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500" required>
                                 <option value="" disabled>Select role…</option>
-                                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label} — {r.desc}</option>)}
+                                {(availableRoles || ROLES).map(r => <option key={r.value} value={r.value}>{r.label} — {r.desc}</option>)}
                             </select>
                             {errors.participation_role && <p className="text-xs text-red-500">{errors.participation_role}</p>}
                         </div>
@@ -88,7 +94,7 @@ export default function PointPoliciesPage({ policies }: Props) {
     const [modal, setModal] = useState<{ open: boolean; mode: 'create' | 'edit'; policy?: PointPolicy }>({ open: false, mode: 'create' });
     const [deleteTarget, setDeleteTarget] = useState<PointPolicy | null>(null);
 
-    const existingRoles = new Set(policies?.map(p => p.participation_role) ?? []);
+    const existingRoles = new Set(policies?.data.map(p => p.participation_role) ?? []);
     const allRolesDefined = ROLES.every(r => existingRoles.has(r.value));
 
     function confirmDelete() {
@@ -97,18 +103,20 @@ export default function PointPoliciesPage({ policies }: Props) {
     }
 
     return (
-        <div className="flex flex-col flex-1 p-8 bg-[#fafafa] min-h-screen">
+        <div className="flex flex-col flex-1 p-4 sm:p-8 bg-[#fafafa] min-h-screen">
             <Head title="Point Policies" />
             <div className="mb-6 flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left sm:gap-0">
                 <div>
                     <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Point Policies</h1>
                     <p className="mt-1 text-sm text-slate-500">Configure default point values per participation role.</p>
                 </div>
-                {!allRolesDefined && (
-                    <Button onClick={() => setModal({ open: true, mode: 'create' })} className="bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5 w-full sm:w-auto">
-                        <Plus className="h-4 w-4" /> Add Policy
-                    </Button>
-                )}
+                <Button 
+                    onClick={() => setModal({ open: true, mode: 'create' })} 
+                    className="bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={allRolesDefined}
+                >
+                    <Plus className="h-4 w-4" /> Add Policy
+                </Button>
             </div>
 
             {allRolesDefined && (
@@ -129,9 +137,9 @@ export default function PointPoliciesPage({ policies }: Props) {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         <Deferred data="policies" fallback={<PolicyTableRowsSkeleton rows={3} columns={4} />}>
-                            {(!policies || policies.length === 0) ? (
+                            {(!policies || policies.data.length === 0) ? (
                                 <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">No policies defined yet.</td></tr>
-                            ) : policies.map(policy => {
+                            ) : policies.data.map(policy => {
                                 const roleInfo = ROLES.find(r => r.value === policy.participation_role);
                                 return (
                                     <tr key={policy.policy_id} className="hover:bg-slate-50 transition-colors">
@@ -143,10 +151,24 @@ export default function PointPoliciesPage({ policies }: Props) {
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-right">
-                                            <div className="flex justify-end gap-1">
-                                                <Button size="icon" variant="ghost" onClick={() => setModal({ open: true, mode: 'edit', policy })}><Pencil className="h-4 w-4 text-slate-500" /></Button>
-                                                <Button size="icon" variant="ghost" onClick={() => setDeleteTarget(policy)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
-                                            </div>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                        <span className="sr-only">Open menu</span>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => setModal({ open: true, mode: 'edit', policy })}>
+                                                        <Pencil className="mr-2 h-4 w-4 text-slate-500" />
+                                                        <span>Edit Policy</span>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => setDeleteTarget(policy)} variant="destructive">
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        <span>Delete Policy</span>
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </td>
                                     </tr>
                                 );
@@ -156,7 +178,31 @@ export default function PointPoliciesPage({ policies }: Props) {
                 </table>
             </div>
 
-            {modal.open && <PolicyModal mode={modal.mode} policy={modal.policy} onClose={() => setModal(m => ({ ...m, open: false }))} />}
+            {policies && policies.total > 0 && (
+                <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+                    <span>Showing {policies.from || 0}–{policies.to || 0} of {policies.total}</span>
+                    <div className="flex gap-1">
+                        {policies.links.map((link, i) => (
+                            link.url ? (
+                                <button 
+                                    key={i} 
+                                    onClick={() => router.get(link.url!, {}, { preserveState: true, replace: true })}
+                                    className={`rounded px-3 py-1.5 border text-sm transition-colors ${link.active ? 'bg-indigo-900 text-white border-indigo-900' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+                                    dangerouslySetInnerHTML={{ __html: link.label }} 
+                                />
+                            ) : (
+                                <span 
+                                    key={i} 
+                                    className="rounded px-3 py-1.5 border border-slate-100 bg-slate-50 text-slate-300 text-sm" 
+                                    dangerouslySetInnerHTML={{ __html: link.label }} 
+                                />
+                            )
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {modal.open && <PolicyModal mode={modal.mode} policy={modal.policy} availableRoles={ROLES.filter(r => !policies?.data.some(p => p.participation_role === r.value))} onClose={() => setModal(m => ({ ...m, open: false }))} />}
 
             {deleteTarget && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">

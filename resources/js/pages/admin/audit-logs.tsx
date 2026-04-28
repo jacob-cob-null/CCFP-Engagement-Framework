@@ -85,17 +85,24 @@ export default function AuditLogsPage({ logs, actionTypes, filters }: Props) {
             </div>
 
             {/* Pagination */}
-            {logs && logs.last_page > 1 && (
+            {logs && logs.total > 0 && (
                 <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-                    <span>Showing {logs.from}–{logs.to} of {logs.total}</span>
+                    <span>Showing {logs.from || 0}–{logs.to || 0} of {logs.total}</span>
                     <div className="flex gap-1">
                         {logs.links.map((link, i) => (
                             link.url ? (
-                                <a key={i} href={link.url}
+                                <button 
+                                    key={i} 
+                                    onClick={() => router.get(link.url!, {}, { preserveState: true, replace: true })}
                                     className={`rounded px-3 py-1.5 border transition-colors ${link.active ? 'bg-indigo-900 text-white border-indigo-900' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
-                                    dangerouslySetInnerHTML={{ __html: link.label }} />
+                                    dangerouslySetInnerHTML={{ __html: link.label }} 
+                                />
                             ) : (
-                                <span key={i} className="rounded px-3 py-1.5 border border-slate-100 bg-slate-50 text-slate-300" dangerouslySetInnerHTML={{ __html: link.label }} />
+                                <span 
+                                    key={i} 
+                                    className="rounded px-3 py-1.5 border border-slate-100 bg-slate-50 text-slate-300" 
+                                    dangerouslySetInnerHTML={{ __html: link.label }} 
+                                />
                             )
                         ))}
                     </div>

@@ -254,7 +254,7 @@ export default function EmployeePointsPage({
             </div>
 
             {/* Pagination */}
-            {leaderboard && leaderboard.last_page > 1 && (
+            {leaderboard && leaderboard.total > 0 && (
                 <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
                     <span>
                         Showing {leaderboard.from}–{leaderboard.to} of{' '}
@@ -321,3 +321,4 @@ function PointsSkeleton({ rows = 10 }: { rows?: number }) {
         </>
     );
 }
+

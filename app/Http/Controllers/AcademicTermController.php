@@ -14,9 +14,9 @@ class AcademicTermController extends Controller
 {
     public function index(Request $request)
     {
-        $terms = Inertia::defer(fn() => Cache::remember(CacheKeys::ACADEMIC_TERMS, CacheKeys::TTL_REFERENCE, fn() =>
-            AcademicTerm::orderByDesc('start_date')->get()->toArray()
-        ));
+        $terms = Inertia::defer(fn() => 
+            AcademicTerm::orderByDesc('start_date')->paginate(10)->withQueryString()
+        );
 
         return Inertia::render('academic-terms', [
             'terms' => $terms,

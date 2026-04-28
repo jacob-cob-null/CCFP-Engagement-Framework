@@ -3,6 +3,7 @@ import { ArchiveTableRowsSkeleton } from '@/components/skeletons/semester-archiv
 import { Archive, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import type { Paginated } from '@/types';
 
 type TermSummary = {
     term_id: string;
@@ -16,7 +17,7 @@ type TermSummary = {
 };
 
 type Props = {
-    terms?: TermSummary[];
+    terms?: Paginated<TermSummary>;
 };
 
 function ConfirmDialog({
@@ -137,7 +138,7 @@ export default function SemesterArchivePage({ terms }: Props) {
                             data="terms"
                             fallback={<ArchiveTableRowsSkeleton rows={5} />}
                         >
-                            {!terms || terms.length === 0 ? (
+                            {!terms || terms.data.length === 0 ? (
                                 <tr>
                                     <td
                                         colSpan={5}
@@ -147,7 +148,7 @@ export default function SemesterArchivePage({ terms }: Props) {
                                     </td>
                                 </tr>
                             ) : (
-                                terms.map((term) => (
+                                terms.data.map((term) => (
                                     <tr
                                         key={term.term_id}
                                         className="transition-colors hover:bg-slate-50"
@@ -223,6 +224,29 @@ export default function SemesterArchivePage({ terms }: Props) {
                         </Deferred>
                     </tbody>
                 </table>
+                {terms && terms.total > 0 && (
+                    <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        <span>Showing {terms.from || 0}–{terms.to || 0} of {terms.total}</span>
+                        <div className="flex gap-1">
+                            {terms.links.map((link, i) => (
+                                link.url ? (
+                                    <button 
+                                        key={i} 
+                                        onClick={() => router.get(link.url!, {}, { preserveState: true, replace: true })}
+                                        className={`rounded px-3 py-1.5 border transition-colors ${link.active ? 'bg-indigo-900 text-white border-indigo-900' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+                                        dangerouslySetInnerHTML={{ __html: link.label }} 
+                                    />
+                                ) : (
+                                    <span 
+                                        key={i} 
+                                        className="rounded px-3 py-1.5 border border-slate-100 bg-slate-50 text-slate-300" 
+                                        dangerouslySetInnerHTML={{ __html: link.label }} 
+                                    />
+                                )
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
             <p className="mt-4 text-xs text-slate-400">

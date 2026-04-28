@@ -261,9 +261,9 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
             </div>
 
             {/* Pagination */}
-            {events && events.last_page > 1 && (
+            {events && events.total > 0 && (
                 <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-                    <span>Showing {events.from}–{events.to} of {events.total}</span>
+                    <span>Showing {events.from}–{events.to || 0} of {events.total}</span>
                     <div className="flex gap-1">
                         {events.links.map((link, i) => (
                             link.url ? (
@@ -322,3 +322,4 @@ function TableSkeleton({ rows = 5, columns = 6 }: { rows?: number; columns?: num
         </>
     );
 }
+

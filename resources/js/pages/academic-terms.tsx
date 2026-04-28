@@ -5,9 +5,9 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { AcademicTerm } from '@/types';
+import type { AcademicTerm, Paginated } from '@/types';
 
-type Props = { terms?: AcademicTerm[] };
+type Props = { terms?: Paginated<AcademicTerm> };
 
 type TermForm = {
     term_id: string;
@@ -279,7 +279,7 @@ export default function AcademicTermsPage({ terms }: Props) {
                                 <TermTableRowsSkeleton rows={5} columns={6} />
                             }
                         >
-                            {!terms || terms.length === 0 ? (
+                            {!terms || terms.data.length === 0 ? (
                                 <tr>
                                     <td
                                         colSpan={6}
@@ -289,7 +289,7 @@ export default function AcademicTermsPage({ terms }: Props) {
                                     </td>
                                 </tr>
                             ) : (
-                                terms.map((term) => (
+                                terms.data.map((term) => (
                                     <tr
                                         key={term.term_id}
                                         className="transition-colors hover:bg-slate-50"
@@ -350,6 +350,29 @@ export default function AcademicTermsPage({ terms }: Props) {
                         </Deferred>
                     </tbody>
                 </table>
+                {terms && terms.total > 0 && (
+                    <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        <span>Showing {terms.from || 0}–{terms.to || 0} of {terms.total}</span>
+                        <div className="flex gap-1">
+                            {terms.links.map((link, i) => (
+                                link.url ? (
+                                    <button 
+                                        key={i} 
+                                        onClick={() => router.get(link.url!, {}, { preserveState: true, replace: true })}
+                                        className={`rounded px-3 py-1.5 border transition-colors ${link.active ? 'bg-indigo-900 text-white border-indigo-900' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+                                        dangerouslySetInnerHTML={{ __html: link.label }} 
+                                    />
+                                ) : (
+                                    <span 
+                                        key={i} 
+                                        className="rounded px-3 py-1.5 border border-slate-100 bg-slate-50 text-slate-300" 
+                                        dangerouslySetInnerHTML={{ __html: link.label }} 
+                                    />
+                                )
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {modal.open && (

@@ -514,7 +514,7 @@ export default function EmployeePage({
             </div>
 
             {/* Pagination */}
-            {employees && employees.last_page > 1 && (
+            {employees && employees.total > 0 && (
                 <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
                     <span>
                         Showing {employees.from}–{employees.to} of{' '}
@@ -595,3 +595,4 @@ EmployeePage.layout = {
         { title: 'Employees', href: '/employee' },
     ],
 };
+

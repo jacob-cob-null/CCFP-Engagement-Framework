@@ -5,9 +5,9 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { PointPolicy, ParticipationRole } from '@/types';
+import type { PointPolicy, ParticipationRole, Paginated } from '@/types';
 
-type Props = { policies?: PointPolicy[] };
+type Props = { policies?: Paginated<PointPolicy> };
 
 type PolicyForm = {
     participation_role: ParticipationRole | '';
@@ -88,7 +88,7 @@ export default function PointPoliciesPage({ policies }: Props) {
     const [modal, setModal] = useState<{ open: boolean; mode: 'create' | 'edit'; policy?: PointPolicy }>({ open: false, mode: 'create' });
     const [deleteTarget, setDeleteTarget] = useState<PointPolicy | null>(null);
 
-    const existingRoles = new Set(policies?.map(p => p.participation_role) ?? []);
+    const existingRoles = new Set(policies?.data.map(p => p.participation_role) ?? []);
     const allRolesDefined = ROLES.every(r => existingRoles.has(r.value));
 
     function confirmDelete() {
@@ -129,9 +129,9 @@ export default function PointPoliciesPage({ policies }: Props) {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         <Deferred data="policies" fallback={<PolicyTableRowsSkeleton rows={3} columns={4} />}>
-                            {(!policies || policies.length === 0) ? (
+                            {(!policies || policies.data.length === 0) ? (
                                 <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">No policies defined yet.</td></tr>
-                            ) : policies.map(policy => {
+                            ) : policies.data.map(policy => {
                                 const roleInfo = ROLES.find(r => r.value === policy.participation_role);
                                 return (
                                     <tr key={policy.policy_id} className="hover:bg-slate-50 transition-colors">
@@ -154,6 +154,29 @@ export default function PointPoliciesPage({ policies }: Props) {
                         </Deferred>
                     </tbody>
                 </table>
+                {policies && policies.total > 0 && (
+                    <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        <span>Showing {policies.from || 0}–{policies.to || 0} of {policies.total}</span>
+                        <div className="flex gap-1">
+                            {policies.links.map((link, i) => (
+                                link.url ? (
+                                    <button 
+                                        key={i} 
+                                        onClick={() => router.get(link.url!, {}, { preserveState: true, replace: true })}
+                                        className={`rounded px-3 py-1.5 border transition-colors ${link.active ? 'bg-indigo-900 text-white border-indigo-900' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+                                        dangerouslySetInnerHTML={{ __html: link.label }} 
+                                    />
+                                ) : (
+                                    <span 
+                                        key={i} 
+                                        className="rounded px-3 py-1.5 border border-slate-100 bg-slate-50 text-slate-300" 
+                                        dangerouslySetInnerHTML={{ __html: link.label }} 
+                                    />
+                                )
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {modal.open && <PolicyModal mode={modal.mode} policy={modal.policy} onClose={() => setModal(m => ({ ...m, open: false }))} />}

@@ -149,6 +149,29 @@ export default function OrganizationalUnitsPage({ units, filters }: Props) {
                         </Deferred>
                     </tbody>
                 </table>
+                {units && units.total > 0 && (
+                    <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        <span>Showing {units.from || 0}–{units.to || 0} of {units.total}</span>
+                        <div className="flex gap-1">
+                            {units.links.map((link, i) => (
+                                link.url ? (
+                                    <button 
+                                        key={i} 
+                                        onClick={() => router.get(link.url!, {}, { preserveState: true, replace: true })}
+                                        className={`rounded px-3 py-1.5 border transition-colors ${link.active ? 'bg-indigo-900 text-white border-indigo-900' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+                                        dangerouslySetInnerHTML={{ __html: link.label }} 
+                                    />
+                                ) : (
+                                    <span 
+                                        key={i} 
+                                        className="rounded px-3 py-1.5 border border-slate-100 bg-slate-50 text-slate-300" 
+                                        dangerouslySetInnerHTML={{ __html: link.label }} 
+                                    />
+                                )
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {modal.open && <UnitModal mode={modal.mode} unit={modal.unit} onClose={() => setModal(m => ({ ...m, open: false }))} />}

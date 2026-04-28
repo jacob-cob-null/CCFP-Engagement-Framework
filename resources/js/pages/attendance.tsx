@@ -349,10 +349,10 @@ export default function AttendancePage({
                             </tbody>
                         </table>
                         
-                        {attendanceRecords && attendanceRecords.last_page > 1 && (
+                        {attendanceRecords && attendanceRecords.total > 0 && (
                             <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:gap-0">
                                 <span className="text-center text-xs text-slate-500 sm:text-left">
-                                    Showing {attendanceRecords.from} to {attendanceRecords.to} of {attendanceRecords.total} entries
+                                    Showing {attendanceRecords.from} to {attendanceRecords.to || 0} of {attendanceRecords.total} entries
                                 </span>
                                 <div className="flex gap-1">
                                     {attendanceRecords.links.map((link, i) => (
@@ -432,5 +432,6 @@ AttendancePage.layout = {
         { title: 'Attendance', href: '/attendance' },
     ],
 };
+
 
 

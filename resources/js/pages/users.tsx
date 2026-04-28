@@ -361,10 +361,10 @@ export default function UsersPage({ users, units, filters }: Props) {
             </div>
 
             {/* Pagination */}
-            {users && users.last_page > 1 && (
+            {users && users.total > 0 && (
                 <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
                     <span>
-                        Showing {users.from}–{users.to} of {users.total} users
+                        Showing {users.from}–{users.to || 0} of {users.total} users
                     </span>
                     <div className="flex gap-1">
                         {users.links.map((link, i) => (
@@ -435,3 +435,4 @@ UsersPage.layout = {
         { title: 'User Management', href: '/users' },
     ],
 };
+

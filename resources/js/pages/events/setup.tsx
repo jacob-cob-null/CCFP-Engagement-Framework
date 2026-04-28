@@ -1,7 +1,13 @@
 import { Head, router, useForm, usePage, Deferred } from '@inertiajs/react';
-import { Pencil, Plus, Trash2, X, ClipboardList } from 'lucide-react';
+import { Pencil, Plus, Trash2, X, ClipboardList, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { AcademicTerm, Event, EventScope, OrganizationalUnit, Paginated, ParticipationRole } from '@/types';
@@ -237,7 +243,7 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
     const currentTerm = terms.find(t => t.is_current);
 
     return (
-        <div className="flex flex-col flex-1 p-8 bg-[#fafafa] min-h-screen">
+        <div className="flex flex-col flex-1 p-4 sm:p-8 bg-[#fafafa] min-h-screen">
             <Head title="Event Setup" />
             <div className="mb-6 flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left sm:gap-0">
                 <div>
@@ -256,22 +262,31 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
                 <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{flash.success}</div>
             )}
 
-            {/* Filters */}
-            <div className="mb-4 flex flex-wrap items-center justify-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:justify-start">
-                <Input placeholder="Search events…" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && applyFilters()} className="w-48" />
-                <select value={scopeFilter} onChange={e => setScopeFilter(e.target.value)}
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value="">All Scopes</option>
-                    {SCOPES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
-                <select value={termFilter} onChange={e => setTermFilter(e.target.value)}
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value="">All Terms</option>
-                    {terms.map(t => <option key={t.term_id} value={t.term_id}>{t.academic_year} {t.semester}</option>)}
-                </select>
-                <Button variant="outline" onClick={applyFilters}>Filter</Button>
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                <Input placeholder="Search events…" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && applyFilters()} className="w-full sm:w-48" />
+                <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+                    <select 
+                        value={scopeFilter} 
+                        onChange={e => setScopeFilter(e.target.value as EventScope | '')}
+                        className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-32 sm:flex-none"
+                    >
+                        <option value="">All Scopes</option>
+                        <option value="university">University</option>
+                        <option value="college">College</option>
+                        <option value="organization">Organization</option>
+                    </select>
+                    <select 
+                        value={termFilter} 
+                        onChange={e => setTermFilter(e.target.value)}
+                        className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-48 sm:flex-none"
+                    >
+                        <option value="">All Terms</option>
+                        {terms.map(t => <option key={t.term_id} value={t.term_id}>{t.academic_year} {t.semester}</option>)}
+                    </select>
+                    <Button variant="outline" onClick={applyFilters} className="flex-1 sm:flex-none">Filter</Button>
+                </div>
                 {(search || scopeFilter || termFilter) && (
-                    <Button variant="ghost" onClick={() => { setSearch(''); setScopeFilter(''); setTermFilter(''); router.get('/events/setup'); }} className="text-slate-500">Clear</Button>
+                    <Button variant="ghost" onClick={() => { setSearch(''); setScopeFilter(''); setTermFilter(''); router.get('/events/setup'); }} className="w-full text-slate-500 sm:w-auto">Clear</Button>
                 )}
             </div>
 
@@ -327,11 +342,28 @@ export default function EventsSetupPage({ events, terms, units, filters }: Props
                                         {event.unit?.unit_name ?? event.unit_id}
                                     </td>
                                     <td className="px-4 py-3 text-right">
-                                        <div className="flex justify-end gap-1">
-                                            <Button size="icon" variant="ghost" title="View Attendance" onClick={() => router.get('/attendance', { event_id: event.event_id })}><ClipboardList className="h-4 w-4 text-indigo-600" /></Button>
-                                            <Button size="icon" variant="ghost" title="Edit Event" onClick={() => setModal({ open: true, mode: 'edit', event })}><Pencil className="h-4 w-4 text-slate-500" /></Button>
-                                            <Button size="icon" variant="ghost" title="Archive Event" onClick={() => setDeleteTarget(event)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
-                                        </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button size="icon" variant="ghost" className="h-8 w-8">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                    <span className="sr-only">Open menu</span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => router.get('/attendance', { event_id: event.event_id })}>
+                                                    <ClipboardList className="mr-2 h-4 w-4 text-indigo-600" />
+                                                    <span>View Attendance</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setModal({ open: true, mode: 'edit', event })}>
+                                                    <Pencil className="mr-2 h-4 w-4 text-slate-500" />
+                                                    <span>Edit Event</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setDeleteTarget(event)} variant="destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    <span>Archive Event</span>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </td>
                                 </tr>
                             ))}

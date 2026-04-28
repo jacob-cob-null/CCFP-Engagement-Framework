@@ -2,7 +2,6 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     LayoutGrid,
     CalendarDays,
-    ClipboardCheck,
     Users,
     BarChart3,
     ShieldCheck,
@@ -32,7 +31,6 @@ import type { NavItem } from '@/types';
 const mainNavItems: NavItem[] = [
     { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
     { title: 'Events', href: '/events/setup', icon: CalendarDays },
-    { title: 'Attendance', href: '/attendance', icon: ClipboardCheck },
     { title: 'Employees', href: '/employee', icon: Users },
 ];
 

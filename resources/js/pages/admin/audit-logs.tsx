@@ -22,7 +22,7 @@ export default function AuditLogsPage({ logs, actionTypes, filters }: Props) {
     }
 
     return (
-        <div className="flex flex-col flex-1 p-8 bg-[#fafafa] min-h-screen">
+        <div className="flex flex-col flex-1 p-4 sm:p-8 bg-[#fafafa] min-h-screen">
             <Head title="Audit Logs" />
             <div className="mb-6">
                 <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Audit Trail</h1>
@@ -30,30 +30,32 @@ export default function AuditLogsPage({ logs, actionTypes, filters }: Props) {
             </div>
 
             {/* Filters */}
-            <div className="mb-4 flex flex-wrap gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                 <Input 
                     placeholder="Search descriptions…" 
                     value={search} 
                     onChange={e => setSearch(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && applyFilters()} 
-                    className="w-64" 
+                    className="w-full sm:w-64" 
                 />
-                <select 
-                    value={actionFilter} 
-                    onChange={e => setActionFilter(e.target.value)}
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                    <option value="">All Action Types</option>
-                    {actionTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-                <Button variant="outline" onClick={applyFilters}>Filter</Button>
+                <div className="flex w-full gap-2 sm:w-auto">
+                    <select 
+                        value={actionFilter} 
+                        onChange={e => setActionFilter(e.target.value)}
+                        className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto sm:flex-none"
+                    >
+                        <option value="">All Action Types</option>
+                        {actionTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <Button variant="outline" onClick={applyFilters} className="flex-1 sm:flex-none">Filter</Button>
+                </div>
                 {(search || actionFilter) && (
-                    <Button variant="ghost" onClick={() => { setSearch(''); setActionFilter(''); router.get('/audit-logs'); }} className="text-slate-500">Clear</Button>
+                    <Button variant="ghost" onClick={() => { setSearch(''); setActionFilter(''); router.get('/audit-logs'); }} className="w-full sm:w-auto text-slate-500">Clear</Button>
                 )}
             </div>
 
             {/* Table */}
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
                 <table className="min-w-full divide-y divide-slate-200 text-sm">
                     <thead className="bg-slate-50">
                         <tr>

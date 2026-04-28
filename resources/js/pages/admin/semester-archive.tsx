@@ -87,7 +87,7 @@ export default function SemesterArchivePage({ terms }: Props) {
     }
 
     return (
-        <div className="flex min-h-screen flex-1 flex-col bg-[#fafafa] p-8">
+        <div className="flex min-h-screen flex-1 flex-col bg-[#fafafa] p-4 sm:p-8">
             <Head title="Semester Archive" />
 
             <div className="mb-6">
@@ -112,7 +112,7 @@ export default function SemesterArchivePage({ terms }: Props) {
                 </div>
             )}
 
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
                 <table className="min-w-full divide-y divide-slate-200 text-sm">
                     <thead className="bg-slate-50">
                         <tr>
@@ -224,30 +224,31 @@ export default function SemesterArchivePage({ terms }: Props) {
                         </Deferred>
                     </tbody>
                 </table>
-                {terms && terms.total > 0 && (
-                    <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                        <span>Showing {terms.from || 0}–{terms.to || 0} of {terms.total}</span>
-                        <div className="flex gap-1">
-                            {terms.links.map((link, i) => (
-                                link.url ? (
-                                    <button 
-                                        key={i} 
-                                        onClick={() => router.get(link.url!, {}, { preserveState: true, replace: true })}
-                                        className={`rounded px-3 py-1.5 border transition-colors ${link.active ? 'bg-indigo-900 text-white border-indigo-900' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }} 
-                                    />
-                                ) : (
-                                    <span 
-                                        key={i} 
-                                        className="rounded px-3 py-1.5 border border-slate-100 bg-slate-50 text-slate-300" 
-                                        dangerouslySetInnerHTML={{ __html: link.label }} 
-                                    />
-                                )
-                            ))}
-                        </div>
-                    </div>
-                )}
             </div>
+
+            {terms && terms.total > 0 && (
+                <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+                    <span>Showing {terms.from || 0}–{terms.to || 0} of {terms.total}</span>
+                    <div className="flex gap-1">
+                        {terms.links.map((link, i) => (
+                            link.url ? (
+                                <button 
+                                    key={i} 
+                                    onClick={() => router.get(link.url!, {}, { preserveState: true, replace: true })}
+                                    className={`rounded px-3 py-1.5 border text-sm transition-colors ${link.active ? 'bg-indigo-900 text-white border-indigo-900' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+                                    dangerouslySetInnerHTML={{ __html: link.label }} 
+                                />
+                            ) : (
+                                <span 
+                                    key={i} 
+                                    className="rounded px-3 py-1.5 border border-slate-100 bg-slate-50 text-slate-300 text-sm" 
+                                    dangerouslySetInnerHTML={{ __html: link.label }} 
+                                />
+                            )
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <p className="mt-4 text-xs text-slate-400">
                 Archiving only hides records from active views. All data is

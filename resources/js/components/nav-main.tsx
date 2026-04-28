@@ -5,12 +5,14 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import type { NavItem } from '@/types';
 
 export function NavMain({ items = [] }: { items: NavItem[] }) {
     const { isCurrentUrl } = useCurrentUrl();
+    const { setOpenMobile } = useSidebar();
 
     return (
         <SidebarGroup className="px-2 py-0">
@@ -21,6 +23,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                             asChild
                             isActive={isCurrentUrl(item.href)}
                             tooltip={{ children: item.title }}
+                            onClick={() => setOpenMobile(false)}
                         >
                             <Link href={item.href}>
                                 {item.icon && <item.icon />}

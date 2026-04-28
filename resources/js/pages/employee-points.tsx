@@ -63,9 +63,9 @@ export default function EmployeePointsPage({
     }
 
     return (
-        <div className="flex min-h-screen flex-1 flex-col bg-[#fafafa] p-8">
+        <div className="flex min-h-screen flex-1 flex-col bg-[#fafafa] p-4 sm:p-8">
             <Head title="Employee Point Leaderboard" />
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left sm:gap-0">
                 <div>
                     <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
                         Point Leaderboard
@@ -77,61 +77,65 @@ export default function EmployeePointsPage({
                 <Button
                     onClick={downloadExport}
                     disabled={!termFilter}
-                    className="gap-1.5 bg-green-700 text-white hover:bg-green-800"
+                    className="w-full sm:w-auto gap-1.5 bg-green-700 text-white hover:bg-green-800"
                 >
                     <Download className="h-4 w-4" /> Export CSV
                 </Button>
             </div>
 
             {/* Filters */}
-            <div className="mb-4 flex flex-wrap gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                 <Input
                     placeholder="Search name or no…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
-                    className="w-56"
+                    className="w-full sm:w-56"
                 />
-                <select
-                    value={termFilter}
-                    onChange={(e) => setTermFilter(e.target.value)}
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                    <option value="" disabled>
-                        Select Term…
-                    </option>
-                    {terms.map((t) => (
-                        <option key={t.term_id} value={t.term_id}>
-                            {t.academic_year} {t.semester}
-                        </option>
-                    ))}
-                </select>
-                {isAdmin && (
+                <div className="flex w-full flex-wrap gap-2 sm:w-auto">
                     <select
-                        value={unitFilter}
-                        onChange={(e) => setUnitFilter(e.target.value)}
-                        className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                        value={termFilter}
+                        onChange={(e) => setTermFilter(e.target.value)}
+                        className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto sm:flex-none"
                     >
-                        <option value="">All Units</option>
-                        {units.map((u) => (
-                            <option key={u.unit_id} value={u.unit_id}>
-                                {u.unit_name}
+                        <option value="" disabled>
+                            Select Term…
+                        </option>
+                        {terms.map((t) => (
+                            <option key={t.term_id} value={t.term_id}>
+                                {t.academic_year} {t.semester}
                             </option>
                         ))}
                     </select>
-                )}
-                <select
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                    <option value="">All Personnel Types</option>
-                    <option value="teaching">Teaching</option>
-                    <option value="non_teaching">Non-Teaching</option>
-                </select>
-                <Button variant="outline" onClick={applyFilters}>
-                    Filter
-                </Button>
+                    {isAdmin && (
+                        <select
+                            value={unitFilter}
+                            onChange={(e) => setUnitFilter(e.target.value)}
+                            className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto sm:flex-none"
+                        >
+                            <option value="">All Units</option>
+                            {units.map((u) => (
+                                <option key={u.unit_id} value={u.unit_id}>
+                                    {u.unit_name}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+                </div>
+                <div className="flex w-full gap-2 sm:w-auto">
+                    <select
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value)}
+                        className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto sm:flex-none"
+                    >
+                        <option value="">All Personnel Types</option>
+                        <option value="teaching">Teaching</option>
+                        <option value="non_teaching">Non-Teaching</option>
+                    </select>
+                    <Button variant="outline" onClick={applyFilters} className="flex-1 sm:flex-none">
+                        Filter
+                    </Button>
+                </div>
                 {(search ||
                     unitFilter ||
                     typeFilter ||
@@ -149,7 +153,7 @@ export default function EmployeePointsPage({
                                 term_id: defaultTerm,
                             });
                         }}
-                        className="text-slate-500"
+                        className="w-full sm:w-auto text-slate-500"
                     >
                         Clear
                     </Button>
@@ -157,7 +161,7 @@ export default function EmployeePointsPage({
             </div>
 
             {/* Table */}
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
                 <table className="min-w-full divide-y divide-slate-200 text-sm">
                     <thead className="border-b border-slate-100/50 bg-slate-50">
                         <tr>

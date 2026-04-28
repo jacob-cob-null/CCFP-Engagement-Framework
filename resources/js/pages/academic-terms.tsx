@@ -1,8 +1,14 @@
 import { Head, router, useForm, Deferred } from '@inertiajs/react';
 import { TermTableRowsSkeleton } from '@/components/skeletons/academic-terms-skeleton';
-import { Pencil, Plus, Star, Trash2, X } from 'lucide-react';
+import { Pencil, Plus, Star, Trash2, X, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { AcademicTerm, Paginated } from '@/types';
@@ -229,7 +235,7 @@ export default function AcademicTermsPage({ terms }: Props) {
     }
 
     return (
-        <div className="flex min-h-screen flex-1 flex-col bg-[#fafafa] p-8">
+        <div className="flex min-h-screen flex-1 flex-col bg-[#fafafa] p-4 sm:p-8">
             <Head title="Academic Terms" />
             <div className="mb-6 flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left sm:gap-0">
                 <div>
@@ -319,30 +325,24 @@ export default function AcademicTermsPage({ terms }: Props) {
                                             )}
                                         </td>
                                         <td className="px-4 py-3 text-right">
-                                            <div className="flex justify-end gap-1">
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    onClick={() =>
-                                                        setModal({
-                                                            open: true,
-                                                            mode: 'edit',
-                                                            term,
-                                                        })
-                                                    }
-                                                >
-                                                    <Pencil className="h-4 w-4 text-slate-500" />
-                                                </Button>
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    onClick={() =>
-                                                        setDeleteTarget(term)
-                                                    }
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-red-400" />
-                                                </Button>
-                                            </div>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                        <span className="sr-only">Open menu</span>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => setModal({ open: true, mode: 'edit', term })}>
+                                                        <Pencil className="mr-2 h-4 w-4 text-slate-500" />
+                                                        <span>Edit Term</span>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => setDeleteTarget(term)} variant="destructive">
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        <span>Delete Term</span>
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </td>
                                     </tr>
                                 ))
@@ -350,30 +350,31 @@ export default function AcademicTermsPage({ terms }: Props) {
                         </Deferred>
                     </tbody>
                 </table>
-                {terms && terms.total > 0 && (
-                    <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                        <span>Showing {terms.from || 0}–{terms.to || 0} of {terms.total}</span>
-                        <div className="flex gap-1">
-                            {terms.links.map((link, i) => (
-                                link.url ? (
-                                    <button 
-                                        key={i} 
-                                        onClick={() => router.get(link.url!, {}, { preserveState: true, replace: true })}
-                                        className={`rounded px-3 py-1.5 border transition-colors ${link.active ? 'bg-indigo-900 text-white border-indigo-900' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }} 
-                                    />
-                                ) : (
-                                    <span 
-                                        key={i} 
-                                        className="rounded px-3 py-1.5 border border-slate-100 bg-slate-50 text-slate-300" 
-                                        dangerouslySetInnerHTML={{ __html: link.label }} 
-                                    />
-                                )
-                            ))}
-                        </div>
-                    </div>
-                )}
             </div>
+
+            {terms && terms.total > 0 && (
+                <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+                    <span>Showing {terms.from || 0}–{terms.to || 0} of {terms.total}</span>
+                    <div className="flex gap-1">
+                        {terms.links.map((link, i) => (
+                            link.url ? (
+                                <button 
+                                    key={i} 
+                                    onClick={() => router.get(link.url!, {}, { preserveState: true, replace: true })}
+                                    className={`rounded px-3 py-1.5 border text-sm transition-colors ${link.active ? 'bg-indigo-900 text-white border-indigo-900' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+                                    dangerouslySetInnerHTML={{ __html: link.label }} 
+                                />
+                            ) : (
+                                <span 
+                                    key={i} 
+                                    className="rounded px-3 py-1.5 border border-slate-100 bg-slate-50 text-slate-300 text-sm" 
+                                    dangerouslySetInnerHTML={{ __html: link.label }} 
+                                />
+                            )
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {modal.open && (
                 <TermModal

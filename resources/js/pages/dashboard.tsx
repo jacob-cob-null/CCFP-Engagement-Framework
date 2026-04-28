@@ -51,7 +51,7 @@ export default function Dashboard({ terms = [], selectedTermId, metrics = { tota
     const pOrg = totalByScope > 0 ? (breakdowns.event_scope.organization / totalByScope) * 100 : 0;
 
     return (
-        <div className="flex flex-col flex-1 p-8 bg-[#fafafa] min-h-screen">
+        <div className="flex flex-col flex-1 p-4 sm:p-8 bg-[#fafafa] min-h-screen">
             <Head title="Dashboard" />
             <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>

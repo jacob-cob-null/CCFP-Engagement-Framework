@@ -241,12 +241,12 @@ export default function AttendancePage({
             ) : (
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Present</p>
-                            <p className="mt-1 text-2xl font-bold text-slate-900">{totalCount}</p>
+                        <div className="rounded-lg border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+                            <p className="text-[10px] sm:text-xs font-medium text-slate-500 uppercase tracking-wider">Total Present</p>
+                            <p className="mt-1 text-xl sm:text-2xl font-bold text-slate-900">{totalCount}</p>
                         </div>
-                        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Point Calculation</p>
+                        <div className="rounded-lg border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+                            <p className="text-[10px] sm:text-xs font-medium text-slate-500 uppercase tracking-wider">Point Calculation</p>
                             <div className="mt-1">
                                 {selectedEvent.point_overrides && selectedEvent.point_overrides.length > 0 ? (
                                     <div className="flex flex-wrap gap-1">

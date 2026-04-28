@@ -1,8 +1,14 @@
 import { Head, router, useForm, usePage, Deferred } from '@inertiajs/react';
 import { EmployeeTableRowsSkeleton } from '@/components/skeletons/employee-skeleton';
-import { Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Pencil, Plus, Trash2, X, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type {
@@ -293,9 +299,9 @@ export default function EmployeePage({
     }
 
     return (
-        <div className="flex min-h-screen flex-1 flex-col bg-[#fafafa] p-8">
+        <div className="flex min-h-screen flex-1 flex-col bg-[#fafafa] p-4 sm:p-8">
             <Head title="Employee Management" />
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left sm:gap-0">
                 <div>
                     <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
                         Employee Management
@@ -305,14 +311,12 @@ export default function EmployeePage({
                         {employees?.total ?? 0}
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <Button
-                        onClick={() => setModal({ open: true, mode: 'create' })}
-                        className="gap-1.5 bg-indigo-900 text-white hover:bg-indigo-800"
-                    >
-                        <Plus className="h-4 w-4" /> Add Employee
-                    </Button>
-                </div>
+                <Button
+                    onClick={() => setModal({ open: true, mode: 'create' })}
+                    className="w-full sm:w-auto gap-1.5 bg-indigo-900 text-white hover:bg-indigo-800"
+                >
+                    <Plus className="h-4 w-4" /> Add Employee
+                </Button>
             </div>
 
             {flash?.success && (
@@ -322,50 +326,54 @@ export default function EmployeePage({
             )}
 
             {/* Filters */}
-            <div className="mb-4 flex flex-wrap gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                 <Input
                     placeholder="Search name or number…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
-                    className="w-56"
+                    className="w-full sm:w-56"
                 />
-                <select
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                    <option value="">All Types</option>
-                    {PERSONNEL_TYPES.map((t) => (
-                        <option key={t.value} value={t.value}>
-                            {t.label}
-                        </option>
-                    ))}
-                </select>
-                <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                    <option value="">All Statuses</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                </select>
-                <select
-                    value={unitFilter}
-                    onChange={(e) => setUnitFilter(e.target.value)}
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                    <option value="">All Units</option>
-                    {units.map((u) => (
-                        <option key={u.unit_id} value={u.unit_id}>
-                            {u.unit_name}
-                        </option>
-                    ))}
-                </select>
-                <Button variant="outline" onClick={applyFilters}>
-                    Filter
-                </Button>
+                <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+                    <select
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value)}
+                        className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto sm:flex-none"
+                    >
+                        <option value="">All Types</option>
+                        {PERSONNEL_TYPES.map((t) => (
+                            <option key={t.value} value={t.value}>
+                                {t.label}
+                            </option>
+                        ))}
+                    </select>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto sm:flex-none"
+                    >
+                        <option value="">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div className="flex w-full gap-2 sm:w-auto">
+                    <select
+                        value={unitFilter}
+                        onChange={(e) => setUnitFilter(e.target.value)}
+                        className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto sm:flex-none"
+                    >
+                        <option value="">All Units</option>
+                        {units.map((u) => (
+                            <option key={u.unit_id} value={u.unit_id}>
+                                {u.unit_name}
+                            </option>
+                        ))}
+                    </select>
+                    <Button variant="outline" onClick={applyFilters} className="flex-1 sm:flex-none">
+                        Filter
+                    </Button>
+                </div>
                 {(search || typeFilter || statusFilter || unitFilter) && (
                     <Button
                         variant="ghost"
@@ -376,7 +384,7 @@ export default function EmployeePage({
                             setUnitFilter('');
                             router.get('/employee');
                         }}
-                        className="text-slate-500"
+                        className="w-full sm:w-auto text-slate-500"
                     >
                         Clear
                     </Button>
@@ -384,7 +392,7 @@ export default function EmployeePage({
             </div>
 
             {/* Main content: employees table */}
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
                 <table className="min-w-full divide-y divide-slate-200 text-sm">
                     <thead className="bg-slate-50">
                         <tr>
@@ -480,30 +488,24 @@ export default function EmployeePage({
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-right">
-                                            <div className="flex justify-end gap-1">
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    onClick={() =>
-                                                        setModal({
-                                                            open: true,
-                                                            mode: 'edit',
-                                                            employee: emp,
-                                                        })
-                                                    }
-                                                >
-                                                    <Pencil className="h-4 w-4 text-slate-500" />
-                                                </Button>
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    onClick={() =>
-                                                        setDeleteTarget(emp)
-                                                    }
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-red-400" />
-                                                </Button>
-                                            </div>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                        <span className="sr-only">Open menu</span>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => setModal({ open: true, mode: 'edit', employee: emp })}>
+                                                        <Pencil className="mr-2 h-4 w-4 text-slate-500" />
+                                                        <span>Edit Employee</span>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => setDeleteTarget(emp)} variant="destructive">
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        <span>Archive Employee</span>
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </td>
                                     </tr>
                                 ))

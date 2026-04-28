@@ -1,8 +1,14 @@
 import { Head, Link, router, useForm, usePage, Deferred } from '@inertiajs/react';
 import { UserTableRowsSkeleton } from '@/components/skeletons/users-skeleton';
-import { Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Pencil, Plus, Trash2, X, MoreHorizontal, UserCheck, UserX } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { OrganizationalUnit, Paginated, Profile, UserRole } from '@/types';
@@ -232,11 +238,11 @@ export default function UsersPage({ users, units, filters }: Props) {
     }
 
     return (
-        <div className="flex flex-col flex-1 p-8 bg-[#fafafa] min-h-screen">
+        <div className="flex flex-col flex-1 p-4 sm:p-8 bg-[#fafafa] min-h-screen">
             <Head title="User Management" />
 
             {/* Header */}
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left sm:gap-0">
                 <div>
                     <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">User Management</h1>
                     <p className="mt-1 text-sm text-slate-500">
@@ -245,7 +251,7 @@ export default function UsersPage({ users, units, filters }: Props) {
                 </div>
                 <Button
                     onClick={() => setModal({ open: true, mode: 'create' })}
-                    className="bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5"
+                    className="w-full sm:w-auto bg-indigo-900 text-white hover:bg-indigo-800 gap-1.5"
                 >
                     <Plus className="h-4 w-4" /> Add User
                 </Button>
@@ -259,40 +265,42 @@ export default function UsersPage({ users, units, filters }: Props) {
             )}
 
             {/* Filters */}
-            <div className="mb-4 flex flex-wrap gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                 <Input
                     placeholder="Search name or email…"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && applyFilters()}
-                    className="w-56"
+                    className="w-full sm:w-56"
                 />
-                <select
-                    value={roleFilter}
-                    onChange={e => setRoleFilter(e.target.value)}
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                    <option value="">All Roles</option>
-                    {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                </select>
-                <select
-                    value={unitFilter}
-                    onChange={e => setUnitFilter(e.target.value)}
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                    <option value="">All Units</option>
-                    {units.map(u => <option key={u.unit_id} value={u.unit_id}>{u.unit_name}</option>)}
-                </select>
-                <Button variant="outline" onClick={applyFilters} className="h-10">Filter</Button>
+                <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+                    <select
+                        value={roleFilter}
+                        onChange={e => setRoleFilter(e.target.value)}
+                        className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto sm:flex-none"
+                    >
+                        <option value="">All Roles</option>
+                        {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                    </select>
+                    <select
+                        value={unitFilter}
+                        onChange={e => setUnitFilter(e.target.value)}
+                        className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto sm:flex-none"
+                    >
+                        <option value="">All Units</option>
+                        {units.map(u => <option key={u.unit_id} value={u.unit_id}>{u.unit_name}</option>)}
+                    </select>
+                    <Button variant="outline" onClick={applyFilters} className="h-10 flex-1 sm:flex-none">Filter</Button>
+                </div>
                 {(search || roleFilter || unitFilter) && (
-                    <Button variant="ghost" onClick={clearFilters} className="h-10 text-slate-500">
+                    <Button variant="ghost" onClick={clearFilters} className="h-10 w-full sm:w-auto text-slate-500">
                         Clear
                     </Button>
                 )}
             </div>
 
             {/* Table */}
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
                 <table className="min-w-full divide-y divide-slate-200 text-sm">
                     <thead className="bg-slate-50">
                         <tr>
@@ -331,26 +339,31 @@ export default function UsersPage({ users, units, filters }: Props) {
                                             )}
                                         </td>
                                         <td className="px-4 py-3 text-right">
-                                            <div className="flex justify-end gap-1">
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    title="Edit user"
-                                                    onClick={() => setModal({ open: true, mode: 'edit', user })}
-                                                >
-                                                    <Pencil className="h-4 w-4 text-slate-500" />
-                                                </Button>
-                                                {!user.deleted_at && (
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        title="Deactivate user"
-                                                        onClick={() => setDeleteTarget(user)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4 text-red-400" />
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                        <span className="sr-only">Open menu</span>
                                                     </Button>
-                                                )}
-                                            </div>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => setModal({ open: true, mode: 'edit', user })}>
+                                                        <Pencil className="mr-2 h-4 w-4 text-slate-500" />
+                                                        <span>Edit User</span>
+                                                    </DropdownMenuItem>
+                                                    {user.deleted_at ? (
+                                                        <DropdownMenuItem onClick={() => setDeleteTarget(user)}>
+                                                            <UserCheck className="mr-2 h-4 w-4 text-green-600" />
+                                                            <span>Activate User</span>
+                                                        </DropdownMenuItem>
+                                                    ) : (
+                                                        <DropdownMenuItem onClick={() => setDeleteTarget(user)} variant="destructive">
+                                                            <UserX className="mr-2 h-4 w-4" />
+                                                            <span>Deactivate User</span>
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </td>
                                     </tr>
                                 ))

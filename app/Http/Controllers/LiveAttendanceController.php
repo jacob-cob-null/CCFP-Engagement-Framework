@@ -76,13 +76,23 @@ class LiveAttendanceController extends Controller
             'participation_role' => 'required|in:participant,organizer,donor',
         ]);
 
-        $event = Event::where('event_id', $validated['event_id'])->active()->firstOrFail();
+        $eventQuery = Event::where('event_id', $validated['event_id'])->active();
+        if (Auth::user()->role !== 'ccfp_admin') {
+            $eventQuery->where('unit_id', Auth::user()->unit_id);
+        }
+        $event = $eventQuery->firstOrFail();
 
         // Resolve employee by name (ilike) or exact employee number
-        $employee = Employee::where('employee_name', 'ilike', $validated['search_query'])
-            ->orWhere('employee_number', $validated['search_query'])
-            ->whereNull('deleted_at')
-            ->first();
+        $employeeQuery = Employee::where(function ($q) use ($validated) {
+            $q->where('employee_name', 'ilike', $validated['search_query'])
+              ->orWhere('employee_number', $validated['search_query']);
+        })->whereNull('deleted_at');
+
+        if (Auth::user()->role !== 'ccfp_admin') {
+            $employeeQuery->where('unit_id', Auth::user()->unit_id);
+        }
+
+        $employee = $employeeQuery->first();
 
         if (!$employee) {
             return back()->withErrors([

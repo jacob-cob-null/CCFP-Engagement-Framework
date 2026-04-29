@@ -105,6 +105,64 @@ class ExportController extends Controller
         ]);
     }
 
+    public function eventAttendance(Request $request, string $eventId)
+    {
+        $user = Auth::user();
+        $isAdmin = $user->role === 'ccfp_admin';
+
+        $event = Event::with(['unit', 'term'])->where('event_id', $eventId)->active();
+
+        if (!$isAdmin) {
+            $event->where('unit_id', $user->unit_id);
+        }
+
+        $event = $event->firstOrFail();
+
+        $query = Attendance::with(['employee.unit'])
+            ->where('event_id', $eventId)
+            ->whereNull('deleted_at');
+
+        if (!$isAdmin) {
+            $query->whereHas('employee', function ($q) use ($user) {
+                $q->where('unit_id', $user->unit_id);
+            });
+        }
+
+        $records = $query->orderBy('recorded_at', 'desc')->get();
+
+        AuditService::log(
+            actionType: 'data_export',
+            targetId: $eventId,
+            description: "Exported attendance records for event '{$event->title}' to CSV.",
+            metadata: ['count' => $records->count()],
+        );
+
+        $safeTitle = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $event->title);
+
+        return new StreamedResponse(function () use ($records, $event) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Employee Number', 'Employee Name', 'Personnel Type', 'Unit', 'Role', 'Points Awarded', 'Override', 'Override Reason', 'Recorded At']);
+
+            foreach ($records as $rec) {
+                fputcsv($handle, [
+                    $rec->employee ? $rec->employee->employee_number : 'N/A',
+                    $rec->employee ? $rec->employee->employee_name : 'Unknown Employee',
+                    $rec->employee ? $rec->employee->personnel_type : 'N/A',
+                    ($rec->employee && $rec->employee->unit) ? $rec->employee->unit->unit_name : 'N/A',
+                    $rec->participation_role,
+                    $rec->points_awarded,
+                    $rec->is_manual_override ? 'Yes' : 'No',
+                    $rec->override_reason ?? '',
+                    $rec->recorded_at->format('Y-m-d H:i:s'),
+                ]);
+            }
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="attendance_' . $safeTitle . '_' . date('YmdHis') . '.csv"',
+        ]);
+    }
+
     public function points(Request $request, string $termId)
     {
         $user = Auth::user();

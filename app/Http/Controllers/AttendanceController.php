@@ -29,7 +29,10 @@ class AttendanceController extends Controller
             $selectedEvent = Event::with(['unit', 'term', 'pointOverrides'])->where('event_id', $eventId)->active();
             
             if ($user->role !== 'ccfp_admin') {
-                $selectedEvent->where('unit_id', $user->unit_id);
+                $selectedEvent->whereRaw(
+                    '"events"."unit_id" IN (SELECT unit_id FROM public.visible_unit_ids_for_user(?))',
+                    [$user->user_id]
+                );
             }
             
             $selectedEvent = $selectedEvent->first();
@@ -83,7 +86,10 @@ class AttendanceController extends Controller
         })->active();
 
         if (Auth::user()->role !== 'ccfp_admin') {
-            $employeeQuery->where('unit_id', Auth::user()->unit_id);
+            $employeeQuery->whereRaw(
+                '"employees"."unit_id" IN (SELECT unit_id FROM public.visible_unit_ids_for_user(?))',
+                [Auth::user()->user_id]
+            );
         }
 
         $employee = $employeeQuery->first();
@@ -134,7 +140,10 @@ class AttendanceController extends Controller
     {
         $record = Attendance::where('attendance_id', $id)->active()
             ->when(Auth::user()->role !== 'ccfp_admin', function ($q) {
-                $q->whereHas('event', fn($eq) => $eq->where('unit_id', Auth::user()->unit_id));
+                $q->whereHas('event', fn($eq) => $eq->whereRaw(
+                    '"events"."unit_id" IN (SELECT unit_id FROM public.visible_unit_ids_for_user(?))',
+                    [Auth::user()->user_id]
+                ));
             })
             ->firstOrFail();
 
@@ -172,7 +181,10 @@ class AttendanceController extends Controller
     {
         $record = Attendance::where('attendance_id', $id)->active()
             ->when(Auth::user()->role !== 'ccfp_admin', function ($q) {
-                $q->whereHas('event', fn($eq) => $eq->where('unit_id', Auth::user()->unit_id));
+                $q->whereHas('event', fn($eq) => $eq->whereRaw(
+                    '"events"."unit_id" IN (SELECT unit_id FROM public.visible_unit_ids_for_user(?))',
+                    [Auth::user()->user_id]
+                ));
             })
             ->firstOrFail();
 
@@ -205,7 +217,10 @@ class AttendanceController extends Controller
         $query = Employee::active();
 
         if (Auth::user()->role !== 'ccfp_admin') {
-            $query->where('unit_id', Auth::user()->unit_id);
+            $query->whereRaw(
+                '"employees"."unit_id" IN (SELECT unit_id FROM public.visible_unit_ids_for_user(?))',
+                [Auth::user()->user_id]
+            );
         } elseif ($orgId = $request->get('org_id')) {
             $query->where('unit_id', $orgId);
         }
@@ -226,13 +241,19 @@ class AttendanceController extends Controller
 
         $event = Event::where('event_id', $validated['event_id'])->active();
         if (Auth::user()->role !== 'ccfp_admin') {
-            $event->where('unit_id', Auth::user()->unit_id);
+            $event->whereRaw(
+                '"events"."unit_id" IN (SELECT unit_id FROM public.visible_unit_ids_for_user(?))',
+                [Auth::user()->user_id]
+            );
         }
         $event = $event->firstOrFail();
 
         $employee = Employee::where('employee_id', $validated['employee_id'])->active();
         if (Auth::user()->role !== 'ccfp_admin') {
-            $employee->where('unit_id', Auth::user()->unit_id);
+            $employee->whereRaw(
+                '"employees"."unit_id" IN (SELECT unit_id FROM public.visible_unit_ids_for_user(?))',
+                [Auth::user()->user_id]
+            );
         }
         $employee = $employee->firstOrFail();
 

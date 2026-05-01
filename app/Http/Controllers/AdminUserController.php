@@ -24,7 +24,7 @@ class AdminUserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::query();
+        $query = User::query()->where('role', '!=', 'ccfp_admin');
 
         // Search by name or email
         if ($search = $request->get('search')) {
@@ -71,8 +71,8 @@ class AdminUserController extends Controller
         $validated = $request->validate([
             'email'    => 'required|email|unique:profiles,user_email',
             'password' => 'required|string|min:8',
-            'role'     => 'required|in:ccfp_admin,college_rep,org_rep',
-            'unit_id'  => 'required_if:role,college_rep,org_rep|nullable|exists:organizational_units,unit_id',
+            'role'     => 'required|in:ccfp_admin,college_rep,sub_head,org_rep',
+            'unit_id'  => 'required_if:role,college_rep,sub_head,org_rep|nullable|exists:organizational_units,unit_id',
             'name'     => 'required|string|max:255',
         ]);
 
@@ -159,8 +159,8 @@ class AdminUserController extends Controller
         $user = User::where('user_id', $id)->firstOrFail();
 
         $validated = $request->validate([
-            'role'    => 'required|in:ccfp_admin,college_rep,org_rep',
-            'unit_id' => 'required_if:role,college_rep,org_rep|nullable|exists:organizational_units,unit_id',
+            'role'    => 'required|in:ccfp_admin,college_rep,sub_head,org_rep',
+            'unit_id' => 'required_if:role,college_rep,sub_head,org_rep|nullable|exists:organizational_units,unit_id',
             'name'    => 'required|string|max:255',
         ]);
 

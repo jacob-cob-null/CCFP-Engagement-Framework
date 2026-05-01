@@ -15,21 +15,23 @@ import type { OrganizationalUnit, Paginated } from '@/types';
 
 type Props = {
     units?: Paginated<OrganizationalUnit>;
+    colleges: Pick<OrganizationalUnit, 'unit_id' | 'unit_name'>[];
     filters: { search?: string; type?: string };
 };
 
-type UnitForm = { unit_id: string; unit_name: string; unit_type: 'college' | 'organization' | '' };
+type UnitForm = { unit_id: string; unit_name: string; unit_type: 'college' | 'organization' | ''; parent_id: string };
 
 const UNIT_TYPES = [
     { value: 'college', label: 'College' },
     { value: 'organization', label: 'Organization' },
 ];
 
-function UnitModal({ mode, unit, onClose }: { mode: 'create' | 'edit'; unit?: OrganizationalUnit; onClose: () => void }) {
+function UnitModal({ mode, unit, colleges, onClose }: { mode: 'create' | 'edit'; unit?: OrganizationalUnit; colleges: Props['colleges']; onClose: () => void }) {
     const { data, setData, post, patch, processing, errors, reset } = useForm<UnitForm>({
         unit_id:   unit?.unit_id   ?? '',
         unit_name: unit?.unit_name ?? '',
         unit_type: (unit?.unit_type ?? '') as UnitForm['unit_type'],
+        parent_id: unit?.parent_id ?? '',
     });
 
     function submit(e: React.FormEvent) {
@@ -63,13 +65,24 @@ function UnitModal({ mode, unit, onClose }: { mode: 'create' | 'edit'; unit?: Or
                     </div>
                     <div className="grid gap-1.5">
                         <Label htmlFor="utype">Unit Type</Label>
-                        <select id="utype" value={data.unit_type} onChange={e => setData('unit_type', e.target.value as UnitForm['unit_type'])}
+                        <select id="utype" value={data.unit_type} onChange={e => { setData('unit_type', e.target.value as UnitForm['unit_type']); setData('parent_id', ''); }}
                             className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500" required>
                             <option value="" disabled>Select type…</option>
                             {UNIT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                         </select>
                         {errors.unit_type && <p className="text-xs text-red-500">{errors.unit_type}</p>}
                     </div>
+                    {data.unit_type === 'organization' && (
+                        <div className="grid gap-1.5">
+                            <Label htmlFor="uparent">Parent College</Label>
+                            <select id="uparent" value={data.parent_id} onChange={e => setData('parent_id', e.target.value)}
+                                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500" required>
+                                <option value="" disabled>Select college…</option>
+                                {colleges.map(c => <option key={c.unit_id} value={c.unit_id}>{c.unit_name}</option>)}
+                            </select>
+                            {errors.parent_id && <p className="text-xs text-red-500">{errors.parent_id}</p>}
+                        </div>
+                    )}
                     <div className="flex justify-end gap-2 pt-2">
                         <Button type="button" variant="outline" onClick={onClose} disabled={processing}>Cancel</Button>
                         <Button type="submit" disabled={processing} className="bg-indigo-900 text-white hover:bg-indigo-800">
@@ -82,7 +95,7 @@ function UnitModal({ mode, unit, onClose }: { mode: 'create' | 'edit'; unit?: Or
     );
 }
 
-export default function OrganizationalUnitsPage({ units, filters }: Props) {
+export default function OrganizationalUnitsPage({ units, colleges, filters }: Props) {
     const [modal, setModal] = useState<{ open: boolean; mode: 'create' | 'edit'; unit?: OrganizationalUnit }>({ open: false, mode: 'create' });
     const [deleteTarget, setDeleteTarget] = useState<OrganizationalUnit | null>(null);
     const [search, setSearch] = useState(filters.search ?? '');
@@ -197,7 +210,7 @@ export default function OrganizationalUnitsPage({ units, filters }: Props) {
                 </div>
             )}
 
-            {modal.open && <UnitModal mode={modal.mode} unit={modal.unit} onClose={() => setModal(m => ({ ...m, open: false }))} />}
+            {modal.open && <UnitModal mode={modal.mode} unit={modal.unit} colleges={colleges} onClose={() => setModal(m => ({ ...m, open: false }))} />}
 
             {deleteTarget && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">

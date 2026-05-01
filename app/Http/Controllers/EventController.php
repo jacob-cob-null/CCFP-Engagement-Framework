@@ -34,7 +34,10 @@ class EventController extends Controller
 
         $user = Auth::user();
         if ($user->role !== 'ccfp_admin') {
-            $query->where('unit_id', $user->unit_id);
+            $query->whereRaw(
+                '"events"."unit_id" IN (SELECT unit_id FROM public.visible_unit_ids_for_user(?))',
+                [$user->user_id]
+            );
         } elseif ($unitId = $request->get('unit_id')) {
             $query->where('unit_id', $unitId);
         }
@@ -114,7 +117,10 @@ class EventController extends Controller
     {
         $user  = Auth::user();
         $event = Event::where('event_id', $id)->active()
-            ->when($user->role !== 'ccfp_admin', fn($q) => $q->where('unit_id', $user->unit_id))
+            ->when($user->role !== 'ccfp_admin', fn($q) => $q->whereRaw(
+                '"events"."unit_id" IN (SELECT unit_id FROM public.visible_unit_ids_for_user(?))',
+                [$user->user_id]
+            ))
             ->firstOrFail();
 
         $validated = $request->validate([
@@ -167,7 +173,10 @@ class EventController extends Controller
     public function destroy(string $id)
     {
         $event = Event::where('event_id', $id)->active()
-            ->when(Auth::user()->role !== 'ccfp_admin', fn($q) => $q->where('unit_id', Auth::user()->unit_id))
+            ->when(Auth::user()->role !== 'ccfp_admin', fn($q) => $q->whereRaw(
+                '"events"."unit_id" IN (SELECT unit_id FROM public.visible_unit_ids_for_user(?))',
+                [Auth::user()->user_id]
+            ))
             ->firstOrFail();
 
         $event->update([

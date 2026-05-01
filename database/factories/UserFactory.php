@@ -35,6 +35,30 @@ class UserFactory extends Factory
         ];
     }
 
+    public function collegeRep(?string $unitId = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role'    => 'college_rep',
+            'unit_id' => $unitId,
+        ]);
+    }
+
+    public function subHead(?string $unitId = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role'    => 'sub_head',
+            'unit_id' => $unitId,
+        ]);
+    }
+
+    public function orgRep(?string $unitId = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role'    => 'org_rep',
+            'unit_id' => $unitId,
+        ]);
+    }
+
     /**
      * Indicate that the model's email address should be unverified.
      */

@@ -62,8 +62,16 @@ class OrganizationalUnitController extends Controller
             }
         });
 
+        $colleges = OrganizationalUnit::whereNull('deleted_at')
+            ->whereRaw('"is_archived" = false')
+            ->where('unit_type', 'college')
+            ->orderBy('unit_name')
+            ->get(['unit_id', 'unit_name'])
+            ->toArray();
+
         return Inertia::render('organizational-units', [
             'units'   => $units,
+            'colleges' => $colleges,
             'filters' => $request->only(['search', 'type']),
         ]);
     }
@@ -74,6 +82,7 @@ class OrganizationalUnitController extends Controller
             'unit_id'   => 'required|string|max:50|unique:organizational_units,unit_id',
             'unit_name' => 'required|string|max:255',
             'unit_type' => 'required|in:college,organization',
+            'parent_id' => 'required_if:unit_type,organization|nullable|exists:organizational_units,unit_id',
         ]);
 
         $unit = OrganizationalUnit::create($validated);
@@ -98,9 +107,10 @@ class OrganizationalUnitController extends Controller
         $validated = $request->validate([
             'unit_name' => 'required|string|max:255',
             'unit_type' => 'required|in:college,organization',
+            'parent_id' => 'required_if:unit_type,organization|nullable|exists:organizational_units,unit_id',
         ]);
 
-        $before = $unit->only(['unit_name', 'unit_type']);
+        $before = $unit->only(['unit_name', 'unit_type', 'parent_id']);
         $unit->update($validated);
 
         $this->invalidateCache();

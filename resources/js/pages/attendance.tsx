@@ -1,6 +1,6 @@
 import { Head, router, useForm, usePage, Deferred } from '@inertiajs/react';
 import { AttendanceTableRowsSkeleton } from '@/components/skeletons/attendance-skeleton';
-import { CalendarDays, Pencil, Plus, Trash2, X, ChevronLeft } from 'lucide-react';
+import { CalendarDays, Pencil, Plus, Trash2, X, ChevronLeft, Download } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -214,12 +214,22 @@ export default function AttendancePage({
                     </p>
                 </div>
                 {selectedEvent && (
-                    <Button
-                        onClick={() => setShowRecord(true)}
-                        className="w-full gap-1.5 bg-indigo-900 text-white hover:bg-indigo-800 sm:w-auto"
-                    >
-                        <Plus className="h-4 w-4" /> Record Attendance
-                    </Button>
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <Button
+                            variant="outline"
+                            className="flex items-center justify-center gap-2 border-slate-200 w-full sm:w-auto"
+                            onClick={() => window.location.href = `/export/attendance/event/${selectedEvent.event_id}`}
+                        >
+                            <Download className="h-4 w-4" />
+                            <span>Export CSV</span>
+                        </Button>
+                        <Button
+                            onClick={() => setShowRecord(true)}
+                            className="w-full gap-1.5 bg-indigo-900 text-white hover:bg-indigo-800 sm:w-auto"
+                        >
+                            <Plus className="h-4 w-4" /> Record Attendance
+                        </Button>
+                    </div>
                 )}
             </div>
 

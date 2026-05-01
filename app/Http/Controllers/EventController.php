@@ -112,8 +112,10 @@ class EventController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $event = Event::where('event_id', $id)->active()->firstOrFail();
         $user  = Auth::user();
+        $event = Event::where('event_id', $id)->active()
+            ->when($user->role !== 'ccfp_admin', fn($q) => $q->where('unit_id', $user->unit_id))
+            ->firstOrFail();
 
         $validated = $request->validate([
             'title'            => 'required|string|max:255',
@@ -132,6 +134,7 @@ class EventController extends Controller
             if ($validated['scope'] === 'university') {
                 return back()->withErrors(['scope' => 'You cannot set university scope.']);
             }
+            $validated['unit_id'] = $user->unit_id;
         }
 
         $overrides = $validated['point_overrides'] ?? [];
@@ -163,7 +166,9 @@ class EventController extends Controller
 
     public function destroy(string $id)
     {
-        $event = Event::where('event_id', $id)->active()->firstOrFail();
+        $event = Event::where('event_id', $id)->active()
+            ->when(Auth::user()->role !== 'ccfp_admin', fn($q) => $q->where('unit_id', Auth::user()->unit_id))
+            ->firstOrFail();
 
         $event->update([
             'deleted_at'  => now(),

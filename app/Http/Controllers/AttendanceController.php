@@ -132,7 +132,11 @@ class AttendanceController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $record = Attendance::where('attendance_id', $id)->active()->firstOrFail();
+        $record = Attendance::where('attendance_id', $id)->active()
+            ->when(Auth::user()->role !== 'ccfp_admin', function ($q) {
+                $q->whereHas('event', fn($eq) => $eq->where('unit_id', Auth::user()->unit_id));
+            })
+            ->firstOrFail();
 
         $validated = $request->validate([
             'points_awarded'     => 'required|integer|min:0',
@@ -166,7 +170,11 @@ class AttendanceController extends Controller
 
     public function destroy(string $id)
     {
-        $record = Attendance::where('attendance_id', $id)->active()->firstOrFail();
+        $record = Attendance::where('attendance_id', $id)->active()
+            ->when(Auth::user()->role !== 'ccfp_admin', function ($q) {
+                $q->whereHas('event', fn($eq) => $eq->where('unit_id', Auth::user()->unit_id));
+            })
+            ->firstOrFail();
 
         $record->update([
             'deleted_at'  => now(),

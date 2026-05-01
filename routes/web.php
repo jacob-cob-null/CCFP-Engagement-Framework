@@ -33,6 +33,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('export/dashboard', [\App\Http\Controllers\ExportController::class, 'dashboard'])->name('export.dashboard');
     Route::get('export/employees', [\App\Http\Controllers\ExportController::class, 'employees'])->name('export.employees');
     Route::get('export/events', [\App\Http\Controllers\ExportController::class, 'events'])->name('export.events');
+    Route::get('export/attendance/event/{eventId}', [\App\Http\Controllers\ExportController::class, 'eventAttendance'])->name('export.eventAttendance');
     Route::get('export/attendance/{termId}', [\App\Http\Controllers\ExportController::class, 'attendance'])->name('export.attendance');
     Route::get('export/points/{termId}', [\App\Http\Controllers\ExportController::class, 'points'])->name('export.points');
 

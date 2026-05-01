@@ -146,7 +146,10 @@ class EmployeeController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $employee = Employee::where('employee_id', $id)->firstOrFail();
+        $user = Auth::user();
+        $employee = Employee::where('employee_id', $id)
+            ->when($user->role !== 'ccfp_admin', fn($q) => $q->where('unit_id', $user->unit_id))
+            ->firstOrFail();
 
         $validated = $request->validate([
             'employee_number' => "required|integer|unique:employees,employee_number,{$employee->employee_number},employee_number",
@@ -156,8 +159,8 @@ class EmployeeController extends Controller
             'status'          => 'required|in:active,inactive',
         ]);
 
-        if (Auth::user()->role !== 'ccfp_admin') {
-            $validated['unit_id'] = Auth::user()->unit_id;
+        if ($user->role !== 'ccfp_admin') {
+            $validated['unit_id'] = $user->unit_id;
         }
 
         $before = $employee->only(['employee_name', 'employee_number', 'personnel_type', 'unit_id', 'status']);
@@ -178,6 +181,7 @@ class EmployeeController extends Controller
     {
         $employee = Employee::where('employee_id', $id)
             ->whereNull('deleted_at')
+            ->when(Auth::user()->role !== 'ccfp_admin', fn($q) => $q->where('unit_id', Auth::user()->unit_id))
             ->firstOrFail();
 
         $employee->update([

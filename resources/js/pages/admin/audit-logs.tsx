@@ -9,16 +9,18 @@ import type { ActivityLog, Paginated } from '@/types';
 type Props = {
     logs?: Paginated<ActivityLog>;
     actionTypes: string[];
-    filters: { search?: string; action_type?: string };
+    filterableUsers: { user_id: string; user_name: string }[];
+    filters: { search?: string; action_type?: string; user_id?: string };
 };
 
-export default function AuditLogsPage({ logs, actionTypes, filters }: Props) {
+export default function AuditLogsPage({ logs, actionTypes, filterableUsers, filters }: Props) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [actionFilter, setActionFilter] = useState(filters.action_type ?? '');
+    const [userFilter, setUserFilter] = useState(filters.user_id ?? '');
     const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
 
     function applyFilters() {
-        router.get('/audit-logs', { search, action_type: actionFilter }, { preserveState: true, replace: true });
+        router.get('/audit-logs', { search, action_type: actionFilter, user_id: userFilter }, { preserveState: true, replace: true });
     }
 
     return (
@@ -41,16 +43,24 @@ export default function AuditLogsPage({ logs, actionTypes, filters }: Props) {
 
             {/* Filters */}
             <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                <Input 
-                    placeholder="Search descriptions…" 
-                    value={search} 
+                <Input
+                    placeholder="Search descriptions…"
+                    value={search}
                     onChange={e => setSearch(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && applyFilters()} 
-                    className="w-full sm:w-64" 
+                    onKeyDown={e => e.key === 'Enter' && applyFilters()}
+                    className="w-full sm:w-64"
                 />
-                <div className="flex w-full gap-2 sm:w-auto">
-                    <select 
-                        value={actionFilter} 
+                <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+                    <select
+                        value={userFilter}
+                        onChange={e => setUserFilter(e.target.value)}
+                        className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto sm:flex-none"
+                    >
+                        <option value="">All Users</option>
+                        {filterableUsers.map(u => <option key={u.user_id} value={u.user_id}>{u.user_name}</option>)}
+                    </select>
+                    <select
+                        value={actionFilter}
                         onChange={e => setActionFilter(e.target.value)}
                         className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto sm:flex-none"
                     >
@@ -59,8 +69,8 @@ export default function AuditLogsPage({ logs, actionTypes, filters }: Props) {
                     </select>
                     <Button variant="outline" onClick={applyFilters} className="flex-1 sm:flex-none">Filter</Button>
                 </div>
-                {(search || actionFilter) && (
-                    <Button variant="ghost" onClick={() => { setSearch(''); setActionFilter(''); router.get('/audit-logs'); }} className="w-full sm:w-auto text-slate-500">Clear</Button>
+                {(search || actionFilter || userFilter) && (
+                    <Button variant="ghost" onClick={() => { setSearch(''); setActionFilter(''); setUserFilter(''); router.get('/audit-logs'); }} className="w-full sm:w-auto text-slate-500">Clear</Button>
                 )}
             </div>
 

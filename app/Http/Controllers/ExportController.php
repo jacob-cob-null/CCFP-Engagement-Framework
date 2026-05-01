@@ -341,11 +341,24 @@ class ExportController extends Controller
 
     public function auditLogs(Request $request)
     {
-        if (Auth::user()->role !== 'ccfp_admin') {
+        $user = Auth::user();
+
+        if (!in_array($user->role, ['ccfp_admin', 'college_rep'])) {
             abort(403);
         }
 
-        $logs = ActivityLog::with('user')->orderByDesc('created_at')->get();
+        $query = ActivityLog::with('user')->orderByDesc('created_at');
+
+        if ($user->role === 'college_rep') {
+            $childUnitIds      = \App\Models\OrganizationalUnit::where('parent_id', $user->unit_id)->pluck('unit_id');
+            $accessibleUserIds = \App\Models\User::whereIn('unit_id', $childUnitIds)->pluck('user_id');
+            $query->where(function ($q) use ($user, $accessibleUserIds) {
+                $q->where('user_id', $user->user_id)
+                  ->orWhereIn('user_id', $accessibleUserIds);
+            });
+        }
+
+        $logs = $query->get();
 
         AuditService::log(
             actionType: 'data_export',

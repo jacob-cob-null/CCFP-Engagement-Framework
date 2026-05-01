@@ -87,10 +87,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('semester-archive', [SemesterArchiveController::class, 'index'])->name('semester-archive.index');
         Route::post('semester-archive/{termId}', [SemesterArchiveController::class, 'archive'])->name('semester-archive.archive');
 
-        // Audit Logs
-        Route::get('audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
-        Route::get('export/audit-logs', [\App\Http\Controllers\ExportController::class, 'auditLogs'])->name('export.auditLogs');
     });
+
+    // Audit Logs — accessible to ccfp_admin and college_rep (scoped per role)
+    Route::get('audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
+    Route::get('export/audit-logs', [\App\Http\Controllers\ExportController::class, 'auditLogs'])->name('export.auditLogs');
 });
 
 require __DIR__.'/settings.php';

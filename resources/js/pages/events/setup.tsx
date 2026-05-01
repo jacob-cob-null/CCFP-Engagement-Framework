@@ -185,12 +185,13 @@ function EventModal({ mode, event, terms, units, userRole, userUnitId, onClose }
                                                 </option>
                                             ))}
                                         </select>
-                                        <Input 
-                                            type="number" 
-                                            min={0} 
-                                            value={override.points_awarded} 
-                                            onChange={e => updateOverride(i, 'points_awarded', parseInt(e.target.value) || 0)}
-                                            className="h-8 w-20 px-2 text-xs" 
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            value={override.points_awarded === 0 ? '' : override.points_awarded}
+                                            placeholder="0"
+                                            onChange={e => updateOverride(i, 'points_awarded', Math.max(0, parseInt(e.target.value) || 0))}
+                                            className="h-8 w-20 px-2 text-xs"
                                         />
                                         <span className="text-[10px] text-slate-400 font-medium">PTS</span>
                                         <button type="button" onClick={() => removeOverride(i)} className="text-slate-400 hover:text-red-500">

@@ -17,9 +17,30 @@ use App\Models\EmployeePointTotal;
 
 class EmployeeController extends Controller
 {
+    /**
+     * Returns unit IDs visible to the current user for employee queries.
+     * org_rep: own unit + parent college unit (read-only access to college employees).
+     * college_rep / others: own unit only.
+     */
+    private function visibleUnitIds(): array
+    {
+        $user = Auth::user();
+        $ids  = [$user->unit_id];
+
+        if ($user->role === 'org_rep' && $user->unit_id) {
+            $parentId = OrganizationalUnit::where('unit_id', $user->unit_id)->value('parent_id');
+            if ($parentId) {
+                $ids[] = $parentId;
+            }
+        }
+
+        return $ids;
+    }
+
     public function index(Request $request)
     {
-        $query = Employee::with('unit');
+        $query = Employee::with('unit')
+            ->whereHas('unit', fn($q) => $q->where('unit_type', 'college'));
 
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
@@ -38,7 +59,7 @@ class EmployeeController extends Controller
 
         $user = Auth::user();
         if ($user->role !== 'ccfp_admin') {
-            $query->where('unit_id', $user->unit_id);
+            $query->whereIn('unit_id', $this->visibleUnitIds());
         } elseif ($unitId = $request->get('unit_id')) {
             $query->where('unit_id', $unitId);
         }
@@ -60,24 +81,30 @@ class EmployeeController extends Controller
             ->paginate(25)
             ->withQueryString());
 
-        // Units dropdown — served from cache, avoiding a second remote DB round-trip
-        $units = Cache::remember(CacheKeys::ORG_UNITS, CacheKeys::TTL_REFERENCE, fn() =>
-            OrganizationalUnit::active()->orderBy('unit_name')->get(['unit_id', 'unit_name', 'unit_type'])->toArray()
-        );
+        // Units dropdown — only colleges; not served from the shared cache since it's a subset
+        $units = OrganizationalUnit::active()
+            ->where('unit_type', 'college')
+            ->orderBy('unit_name')
+            ->get(['unit_id', 'unit_name', 'unit_type'])
+            ->toArray();
 
         // Points leaderboard (optional view) — lightweight paginated totals
         $currentTerm = AcademicTerm::where('is_current', 'true')->first();
         $termId = $request->get('term_id', $currentTerm?->term_id);
 
         $pointsQuery = EmployeePointTotal::with(['employee.unit'])
-            ->whereHas('employee', function ($q) { $q->whereNull('deleted_at'); });
+            ->whereHas('employee', function ($q) {
+                $q->whereNull('deleted_at')
+                  ->whereHas('unit', fn($uq) => $uq->where('unit_type', 'college'));
+            });
 
         if ($termId) {
             $pointsQuery->where('term_id', $termId);
         }
 
         if ($user->role !== 'ccfp_admin') {
-            $pointsQuery->whereHas('employee', function ($q) use ($user) { $q->where('unit_id', $user->unit_id); });
+            $visibleIds = $this->visibleUnitIds();
+            $pointsQuery->whereHas('employee', function ($q) use ($visibleIds) { $q->whereIn('unit_id', $visibleIds); });
         } elseif ($unitId = $request->get('unit_id')) {
             $pointsQuery->whereHas('employee', function ($q) use ($unitId) { $q->where('unit_id', $unitId); });
         }

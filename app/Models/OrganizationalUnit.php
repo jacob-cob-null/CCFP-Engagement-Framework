@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class OrganizationalUnit extends Model
 {
@@ -15,6 +16,7 @@ class OrganizationalUnit extends Model
         'unit_id',
         'unit_name',
         'unit_type',
+        'parent_id',
     ];
 
     protected $casts = [
@@ -25,6 +27,16 @@ class OrganizationalUnit extends Model
     ];
 
     // ── Relationships ──────────────────────────────────────────────────────────
+
+    public function parent()
+    {
+        return $this->belongsTo(OrganizationalUnit::class, 'parent_id', 'unit_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(OrganizationalUnit::class, 'parent_id', 'unit_id');
+    }
 
     public function employees()
     {
@@ -46,5 +58,24 @@ class OrganizationalUnit extends Model
     public function scopeActive($query)
     {
         return $query->whereNull($this->getTable() . '.deleted_at')->whereRaw('"' . $this->getTable() . '"."is_archived" = false');
+    }
+
+    /**
+     * Restrict results to units visible to the authenticated user.
+     * ccfp_admin sees all units. Other roles see their own unit and all
+     * descendants, as determined by the database hierarchy function.
+     */
+    public function scopeVisible($query)
+    {
+        $user = Auth::user();
+
+        if (!$user || $user->role === 'ccfp_admin') {
+            return $query;
+        }
+
+        return $query->whereRaw(
+            '"organizational_units"."unit_id" IN (SELECT unit_id FROM public.visible_unit_ids_for_user(?))',
+            [$user->user_id]
+        );
     }
 }

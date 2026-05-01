@@ -128,7 +128,7 @@ function EmployeeModal({
                                 type="number"
                                 value={data.employee_number}
                                 onChange={(e) =>
-                                    setData('employee_number', e.target.value)
+                                    setData('employee_number', e.target.value.replace(/^0+(?=\d)/, ''))
                                 }
                                 placeholder="12345"
                                 required

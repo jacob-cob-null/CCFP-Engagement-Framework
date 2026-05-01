@@ -34,6 +34,7 @@ export type OrganizationalUnit = {
     unit_id: string;
     unit_name: string;
     unit_type: 'college' | 'organization';
+    parent_id: string | null;
     created_at: string;
     updated_at: string;
     deleted_at: string | null;

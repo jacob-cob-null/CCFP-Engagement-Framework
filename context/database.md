@@ -119,6 +119,7 @@ CREATE TABLE public.profiles (
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   deleted_at timestamp with time zone,
   CONSTRAINT profiles_pkey PRIMARY KEY (user_id),
+  CONSTRAINT unit_required_for_reps CHECK (role = 'ccfp_admin' OR (role IN ('college_rep', 'sub_head', 'org_rep') AND unit_id IS NOT NULL)),
   CONSTRAINT profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
   CONSTRAINT profiles_unit_id_fkey FOREIGN KEY (unit_id) REFERENCES public.organizational_units(unit_id)
 );

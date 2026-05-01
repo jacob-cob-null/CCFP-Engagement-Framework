@@ -28,3 +28,5 @@ yarn-error.log
 /.zed
 bin
 package.json
+
+database/supabase

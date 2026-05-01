@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\Event;
+use App\Models\OrganizationalUnit;
 use App\Models\PointPolicy;
 use App\Services\AuditService;
 use App\Services\CacheKeys;
@@ -17,6 +18,21 @@ use Inertia\Inertia;
 
 class AttendanceController extends Controller
 {
+    private function scopeEmployeesByVisibleUnits($query, $user): void
+    {
+        if ($user->role === 'org_rep' && $user->unit_id) {
+            $parentId = OrganizationalUnit::where('unit_id', $user->unit_id)->value('parent_id');
+            $unitIds  = array_filter([$user->unit_id, $parentId]);
+            $query->whereIn('employees.unit_id', $unitIds);
+        } else {
+            $query->whereRaw(
+                '"employees"."unit_id" IN (SELECT unit_id FROM public.visible_unit_ids_for_user(?))',
+                [$user->user_id]
+            );
+        }
+    }
+
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -214,13 +230,11 @@ class AttendanceController extends Controller
 
     public function getEmployees(Request $request)
     {
+        $user  = Auth::user();
         $query = Employee::active();
 
-        if (Auth::user()->role !== 'ccfp_admin') {
-            $query->whereRaw(
-                '"employees"."unit_id" IN (SELECT unit_id FROM public.visible_unit_ids_for_user(?))',
-                [Auth::user()->user_id]
-            );
+        if ($user->role !== 'ccfp_admin') {
+            $this->scopeEmployeesByVisibleUnits($query, $user);
         } elseif ($orgId = $request->get('org_id')) {
             $query->where('unit_id', $orgId);
         }
@@ -256,10 +270,7 @@ class AttendanceController extends Controller
 
         $employee = Employee::where('employee_id', $validated['employee_id'])->active();
         if (Auth::user()->role !== 'ccfp_admin') {
-            $employee->whereRaw(
-                '"employees"."unit_id" IN (SELECT unit_id FROM public.visible_unit_ids_for_user(?))',
-                [Auth::user()->user_id]
-            );
+            $this->scopeEmployeesByVisibleUnits($employee, Auth::user());
         }
         $employee = $employee->firstOrFail();
 

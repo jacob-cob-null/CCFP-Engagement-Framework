@@ -47,9 +47,15 @@ const adminNavItems: NavItem[] = [
     { title: 'Audit Logs', href: '/audit-logs', icon: Search },
 ];
 
+const collegeRepNavItems: NavItem[] = [
+    { title: 'Audit Logs', href: '/audit-logs', icon: Search },
+];
+
 export function AppSidebar() {
     const { props } = usePage<{ auth: { user: { role: string } | null } }>();
-    const isAdmin = props.auth?.user?.role === 'ccfp_admin';
+    const role = props.auth?.user?.role;
+    const isAdmin = role === 'ccfp_admin';
+    const isCollegeRep = role === 'college_rep';
     const { isMobile, setOpenMobile } = useSidebar();
 
     return (
@@ -90,6 +96,11 @@ export function AppSidebar() {
                 {isAdmin && (
                     <div className="mt-2 border-t border-white/10 pt-2">
                         <NavMain items={adminNavItems} />
+                    </div>
+                )}
+                {isCollegeRep && (
+                    <div className="mt-2 border-t border-white/10 pt-2">
+                        <NavMain items={collegeRepNavItems} />
                     </div>
                 )}
             </SidebarContent>

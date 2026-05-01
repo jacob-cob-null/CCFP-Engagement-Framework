@@ -17,6 +17,26 @@ use App\Models\EmployeePointTotal;
 
 class EmployeeController extends Controller
 {
+    /**
+     * Returns unit IDs visible to the current user for employee queries.
+     * org_rep: own unit + parent college unit (read-only access to college employees).
+     * college_rep / others: own unit only.
+     */
+    private function visibleUnitIds(): array
+    {
+        $user = Auth::user();
+        $ids  = [$user->unit_id];
+
+        if ($user->role === 'org_rep' && $user->unit_id) {
+            $parentId = OrganizationalUnit::where('unit_id', $user->unit_id)->value('parent_id');
+            if ($parentId) {
+                $ids[] = $parentId;
+            }
+        }
+
+        return $ids;
+    }
+
     public function index(Request $request)
     {
         $query = Employee::with('unit')
@@ -39,7 +59,7 @@ class EmployeeController extends Controller
 
         $user = Auth::user();
         if ($user->role !== 'ccfp_admin') {
-            $query->where('unit_id', $user->unit_id);
+            $query->whereIn('unit_id', $this->visibleUnitIds());
         } elseif ($unitId = $request->get('unit_id')) {
             $query->where('unit_id', $unitId);
         }
@@ -83,7 +103,8 @@ class EmployeeController extends Controller
         }
 
         if ($user->role !== 'ccfp_admin') {
-            $pointsQuery->whereHas('employee', function ($q) use ($user) { $q->where('unit_id', $user->unit_id); });
+            $visibleIds = $this->visibleUnitIds();
+            $pointsQuery->whereHas('employee', function ($q) use ($visibleIds) { $q->whereIn('unit_id', $visibleIds); });
         } elseif ($unitId = $request->get('unit_id')) {
             $pointsQuery->whereHas('employee', function ($q) use ($unitId) { $q->where('unit_id', $unitId); });
         }

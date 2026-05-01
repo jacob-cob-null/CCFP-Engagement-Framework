@@ -225,6 +225,12 @@ class AttendanceController extends Controller
             $query->where('unit_id', $orgId);
         }
 
+        if ($eventId = $request->get('event_id')) {
+            $query->whereDoesntHave('attendances', fn($q) =>
+                $q->where('event_id', $eventId)->active()
+            );
+        }
+
         $employees = $query->orderBy('employee_name')
             ->get(['employee_id', 'employee_name', 'employee_number', 'personnel_type', 'unit_id']);
 

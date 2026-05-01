@@ -19,7 +19,8 @@ class EmployeeController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Employee::with('unit');
+        $query = Employee::with('unit')
+            ->whereHas('unit', fn($q) => $q->where('unit_type', 'college'));
 
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
@@ -60,17 +61,22 @@ class EmployeeController extends Controller
             ->paginate(25)
             ->withQueryString());
 
-        // Units dropdown — served from cache, avoiding a second remote DB round-trip
-        $units = Cache::remember(CacheKeys::ORG_UNITS, CacheKeys::TTL_REFERENCE, fn() =>
-            OrganizationalUnit::active()->orderBy('unit_name')->get(['unit_id', 'unit_name', 'unit_type'])->toArray()
-        );
+        // Units dropdown — only colleges; not served from the shared cache since it's a subset
+        $units = OrganizationalUnit::active()
+            ->where('unit_type', 'college')
+            ->orderBy('unit_name')
+            ->get(['unit_id', 'unit_name', 'unit_type'])
+            ->toArray();
 
         // Points leaderboard (optional view) — lightweight paginated totals
         $currentTerm = AcademicTerm::where('is_current', 'true')->first();
         $termId = $request->get('term_id', $currentTerm?->term_id);
 
         $pointsQuery = EmployeePointTotal::with(['employee.unit'])
-            ->whereHas('employee', function ($q) { $q->whereNull('deleted_at'); });
+            ->whereHas('employee', function ($q) {
+                $q->whereNull('deleted_at')
+                  ->whereHas('unit', fn($uq) => $uq->where('unit_type', 'college'));
+            });
 
         if ($termId) {
             $pointsQuery->where('term_id', $termId);

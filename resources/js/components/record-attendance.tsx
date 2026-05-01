@@ -26,9 +26,9 @@ export function RecordAttendancePanel({
     const ITEMS_PER_PAGE = 10;
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-    useEffect(() => {
-        // Fetch all employees (org filter could be added later if needed)
-        fetch('/api/attendance/employees')
+    function fetchEmployees() {
+        setLoading(true);
+        fetch(`/api/attendance/employees?event_id=${event.event_id}`)
             .then((res) => res.json())
             .then((data) => {
                 setEmployees(data);
@@ -38,7 +38,11 @@ export function RecordAttendancePanel({
                 console.error(err);
                 setLoading(false);
             });
-    }, [event.unit_id]);
+    }
+
+    useEffect(() => {
+        fetchEmployees();
+    }, [event.event_id]);
 
     const filteredEmployees = employees.filter((emp) =>
         emp.employee_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -154,6 +158,7 @@ export function RecordAttendancePanel({
                     event={event}
                     employee={selectedEmployee}
                     onClose={() => setSelectedEmployee(null)}
+                    onRecorded={() => { setSelectedEmployee(null); fetchEmployees(); }}
                 />
             )}
         </div>
@@ -164,10 +169,12 @@ function RolePickerModal({
     event,
     employee,
     onClose,
+    onRecorded,
 }: {
     event: Event;
     employee: Employee;
     onClose: () => void;
+    onRecorded: () => void;
 }) {
     const [role, setRole] = useState<ParticipationRole>('participant');
     const [processing, setProcessing] = useState(false);
@@ -183,7 +190,7 @@ function RolePickerModal({
             role,
         }, {
             onSuccess: () => {
-                onClose();
+                onRecorded();
             },
             onFinish: () => {
                 setProcessing(false);
